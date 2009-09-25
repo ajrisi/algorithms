@@ -7,8 +7,8 @@ minheap.o:	minheap.c minheap.h
 	gcc -o minheap.o -c minheap.c
 
 clean:	
-	rm $(TARGET) &> /dev/null
-	rm *.o &> /dev/null
+	rm -f $(TARGET) 2> /dev/null
+	rm -f *.o 2> /dev/null
 
 dist-clean:	clean
-	rm *~ &> /dev/null
+	rm -f *~ 2> /dev/null

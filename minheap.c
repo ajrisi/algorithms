@@ -1,24 +1,39 @@
 /**
- * An implementation of a min-heap, used as the population for the GA
+ * @file   minheap.c
+ * @author Adam Risi <ajrisi@gmail.com>
+ * @date   Fri Sep 25 17:36:01 2009
+ * 
+ * @brief  A simple minheap implementation
+ * 
+ * 
  */
+
 #include <stdlib.h>
 #include <string.h>
 
 #include "minheap.h"
 
+/**
+ * Hidden functions, used for the sifting up and down of an item in the heap
+ * 
+ */
 static void sift_up(minheap *mh, int index);
 static void sift_down(minheap *mh, int index);
+
 
 minheap *minheap_init(int max_size,
 		      minheap_dup_fn dup_fn,
 		      minheap_order_fn order_fn,
 		      minheap_freeitem_fn freeitem_fn)
 {
+
+  /*Allocate the space for the new minheap, and set it to null */
   minheap *mh = (minheap*)malloc(sizeof(minheap));
   if(mh == NULL) {
     /* the memory for the minheap could not be allocated! */
     return NULL;
   }
+  memset((void*)mh, 0, sizeof(minheap));
 
   if(max_size <= 0) {
     /* can not allocate a heap with no contents! */
@@ -33,7 +48,7 @@ minheap *minheap_init(int max_size,
   }
 
   /* clear the items memory pointers to 0 */
-  memset(mh->heap_items, 0, sizeof(void*)*max_size);
+  memset(mh->heap_items, 0, sizeof(void*)*max_size+1);
 
   /* save the max size of the heap */
   mh->max_heap_size = max_size;

@@ -55,30 +55,48 @@ heap *heap_new(int max_size,
 /** 
  * Inserts an item into the heap
  * 
- * @param mh the heap to use
+ * @param h the heap to use
  * @param data the address of the item to add
  * 
  * @return a pointer to the added item, or NULL on failure
  */
-void *heap_insert(heap *mh, void *data);
+void *heap_insert(heap *h, void *data);
 
 /** 
  * Extracts an item from the heap. Once you have the item, you should pass it to
- * your heap freeing function (you can use mh->freeitem_fn(item)) to prevent
+ * your heap freeing function (you can use h->freeitem_fn(item)) to prevent
  * memory leaks
  * 
- * @param mh the heap to extract from
+ * @param h the heap to extract from
  * 
  * @return a pointer to the item, or NULL on failure
  */
-void * heap_extract(heap *mh);
+void *heap_extract(heap *h);
+
+/** 
+ * True if the heap is empty
+ * 
+ * @param h the heap
+ * 
+ * @return 1 if the heap is empty, otherwise 0
+ */
+int heap_isempty(heap *h);
+
+/** 
+ * True if the heap is full
+ * 
+ * @param h the heap
+ * 
+ * @return 1 if the heap is full, otherwise 0
+ */
+int heap_isfull(heap *h);
 
 /** 
  * This will free the memory associated with a heap
  * 
- * @param mh 
+ * @param h 
  */
-void heap_free(heap *mh);
+void heap_free(heap *h);
 
 
 #endif

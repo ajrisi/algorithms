@@ -140,6 +140,16 @@ void *heap_extract(heap *h)
   return minitem;
 }
 
+int heap_isempty(heap *h)
+{
+  return (h->next_free_idx == 1);
+}
+
+int heap_isfull(heap *h)
+{
+  return (h->next_free_idx >= h->max_heap_size);  
+}
+
 void heap_free(heap *h)
 {
   int i;

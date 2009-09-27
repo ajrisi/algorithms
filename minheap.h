@@ -1,4 +1,3 @@
-/* todo: better header */
 /**
  * Implementation of a min-heap
  */

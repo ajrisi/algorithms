@@ -22,8 +22,8 @@ static void sift_down(minheap *mh, int index);
 
 
 minheap *minheap_init(int max_size,
-		      minheap_dup_fn dup_fn,
-		      minheap_order_fn order_fn,
+		      minheap_dupitem_fn dupitem_fn,
+		      minheap_orderitem_fn orderitem_fn,
 		      minheap_freeitem_fn freeitem_fn)
 {
 
@@ -54,10 +54,10 @@ minheap *minheap_init(int max_size,
   mh->max_heap_size = max_size;
 
   /* save a pointer to the dup fn */
-  mh->dup_fn = dup_fn;
+  mh->dupitem_fn = dupitem_fn;
 
   /* save a pointer to the ordering function */
-  mh->order_fn = order_fn;
+  mh->orderitem_fn = orderitem_fn;
 
   /* save a pointer to the free an item function */
   mh->freeitem_fn = freeitem_fn;
@@ -87,8 +87,8 @@ void *minheap_insert(minheap *mh, void *data)
   /* check to see if we are using a dup function, and if we are, then
      make a copy of data, and add the copy of the item to the heap.
      If we are not, then just add data to the heap */
-  if(mh->dup_fn != NULL) {
-    data = mh->dup_fn(data);
+  if(mh->dupitem_fn != NULL) {
+    data = mh->dupitem_fn(data);
     if(data == NULL) {
       /* could not duplicate item */
       return NULL;
@@ -146,7 +146,7 @@ void minheap_free(minheap *mh)
   /* iterate over the minheap,
      call free for each item (if dup was enabled),
      then free the heap itself */
-  if(mh->dup_fn != NULL) {
+  if(mh->dupitem_fn != NULL) {
     for(i = 1; i < mh->next_free_idx; i++) {
       mh->freeitem_fn(mh->heap_items[i]);
     }
@@ -185,7 +185,7 @@ static void sift_up(minheap *mh, int insert_index)
   parent_item = mh->heap_items[parent_index];
   insert_item = mh->heap_items[insert_index];
 
-  if(mh->order_fn(insert_item) < mh->order_fn(parent_item)) {
+  if(mh->orderitem_fn(insert_item) < mh->orderitem_fn(parent_item)) {
     /* swap the item and its parent */
     swap_tmp = insert_index;
     mh->heap_items[parent_index] = insert_item;
@@ -227,8 +227,8 @@ static void sift_down(minheap *mh, int insert_index)
     /* there is a child to compare and possibly swap with */
     if(child2_index < mh->next_free_idx) {
       /* find the smallest, if it is less than insert item, then swap */
-      if(mh->order_fn(mh->heap_items[child1_index]) < 
-	 mh->order_fn(mh->heap_items[child2_index])) {
+      if(mh->orderitem_fn(mh->heap_items[child1_index]) < 
+	 mh->orderitem_fn(mh->heap_items[child2_index])) {
 	/* child 1 was smaller, so it is the new swap index */
 	minchild_index = child1_index;
       } else {
@@ -246,7 +246,7 @@ static void sift_down(minheap *mh, int insert_index)
   minchild_item = mh->heap_items[minchild_index];
 
   /* is the target child smaller than insert_item? */
-  if(mh->order_fn(minchild_item) < mh->order_fn(insert_item)) {
+  if(mh->orderitem_fn(minchild_item) < mh->orderitem_fn(insert_item)) {
     /* the child was less than the parent, so swap the two */
     mh->heap_items[insert_index] = minchild_item;
     mh->heap_items[minchild_index] = insert_item;

@@ -79,7 +79,7 @@ void *heap_insert(heap *h, void *data)
   }
 
   /* check to make sure there is space in the tree */
-  if(h->next_free_idx >= h->max_heap_size) {
+  if(heap_isfull(h)) {
     /* the heap is already full, return NULL */
     return NULL;
   }
@@ -120,8 +120,7 @@ void *heap_extract(heap *h)
   }
 
   /* check to make sure that the heap isnt empty */
-  if(h->next_free_idx == 1) {
-    /* the heap was empty, return NULL */
+  if(heap_isempty(h)) {
     return NULL;
   }
 

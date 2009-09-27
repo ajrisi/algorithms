@@ -10,7 +10,7 @@
 
 
 #ifndef MINHEAP_H_
-#define HINHEAP_H_
+#define MINHEAP_H_
 
 typedef void*(*minheap_dupitem_fn)(void *);
 typedef int(*minheap_orderitem_fn)(void *);

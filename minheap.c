@@ -21,7 +21,7 @@ static void sift_up(minheap *mh, int index);
 static void sift_down(minheap *mh, int index);
 
 
-minheap *minheap_init(int max_size,
+minheap *minheap_new(int max_size,
 		      minheap_dupitem_fn dupitem_fn,
 		      minheap_orderitem_fn orderitem_fn,
 		      minheap_freeitem_fn freeitem_fn)

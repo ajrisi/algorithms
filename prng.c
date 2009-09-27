@@ -23,7 +23,7 @@ prng *prng_new(unsigned long long seed)
     return NULL;
   }
 
-  prng *r = malloc(sizeof(rand));
+  prng *r = malloc(sizeof(prng));
   if(r == NULL) {
     return NULL;
   }

@@ -83,5 +83,8 @@ unsigned int prng_ui(prng *r)
 
 void prng_free(prng *r)
 {
+  if(r == NULL) {
+    return;
+  }
   free(r);
 }

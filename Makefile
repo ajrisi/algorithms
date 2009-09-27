@@ -1,10 +1,10 @@
 TARGET=libalgo.a
 
-all:	minheap.o prng.o
-	ar rcs $(TARGET) minheap.o prng.o
+all:	heap.o prng.o
+	ar rcs $(TARGET) heap.o prng.o
 
-minheap.o:	minheap.c minheap.h
-	gcc -ansi -Wall -o minheap.o -c minheap.c
+heap.o:	heap.c heap.h
+	gcc -ansi -Wall -o heap.o -c heap.c
 
 prng.o:	prng.c prng.h
 	gcc -ansi -Wall -o prng.o -c prng.c

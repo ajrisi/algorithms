@@ -3,8 +3,8 @@
  * @author Adam Risi <ajrisi@gmail.com>
  * @date   Sun Sep 27 05:20:16 2009
  * 
- * @brief An implementation of a graph, preallocates based on max
- * number of verticies. This is implemented as a graph adjacency
+ * @brief An implementation of a directed graph, preallocates based on
+ * max number of verticies. This is implemented as a graph adjacency
  * matrix, so n verticies yields a n^2+n memory requirement. This
  * graph is VERY generic, so if you are looking for an integer
  * weighted graph, then use igraph.
@@ -15,9 +15,6 @@
 #ifndef GRAPH_H_
 #define GRAPH_H_
 
-/* something for the edges, and something for the verticies */
-/* should we store them in the graph, or not? We should be able to store in graph */
-
 typedef void*(*graph_dupedge_fn)(void*);
 typedef void*(*graph_dupvertex_fn)(void*);
 typedef void*(*graph_freeedge_fn)(void*);
@@ -27,8 +24,8 @@ typedef void*(*graph_freevertex_fn)(void*);
 typedef struct graph_s graph;
 struct graph_s {
   int max_verticies;
-  void *edges[][];
-  void *verticies[];
+  void *edges;
+  void *verticies;
   int nedges;
   int nverticies;
 
@@ -60,6 +57,16 @@ graph *graph_new(int max_verticies,
 		 graph_freevertex_fn freevertex_fn);
 
 /** 
+ * Checks to see if the graph's list of verticies is full.
+ * 
+ * @param g the graph
+ * 
+ * @return true (1) if full, or false (0) if you can add another
+ *         vertex. Returns -1 if an invalid graph was passed in
+ */
+int graph_isfull(graph *g);
+
+/** 
  * Adds a vertex to the graph. The vertex passed in will be copied if
  * a dup function was provided
  * 
@@ -67,7 +74,8 @@ graph *graph_new(int max_verticies,
  * @param vertex the vertex to add
  * 
  * @return the integer index of the vertex. This can be used to get
- *         the pointer of the vertex in memory later
+ *         the pointer of the vertex in memory later. Will return -1
+ *         on error
  */
 int graph_addvertex(graph *g, void *vertex);
 
@@ -77,12 +85,12 @@ int graph_addvertex(graph *g, void *vertex);
  * 
  * @param g the graph
  * @param edge the edge to add
- * @param vertex1 the "from" vertex
- * @param vertex2 the "to" vertex
+ * @param vertex_from the "from" vertex
+ * @param vertex_to the "to" vertex
  * 
- * @return 
+ * @return the total number of edges in the graph, or -1 on error
  */
-int graph_addedge(graph *g, void *edge, int vertex1, int vertex2);
+int graph_addedge(graph *g, void *edge, int vertex_from, int vertex_to);
 
 /** 
  * Removes a vertex from the graph. This "breaks" any edges to and
@@ -97,10 +105,10 @@ void graph_removevertex(graph *g, int vertex);
  * Remove an edge from the graph
  * 
  * @param g the graph
- * @param vertex1 the "from" vertex index
- * @param vertex2 the "to" vertex index
+ * @param vertex_from the "from" vertex index
+ * @param vertex_to the "to" vertex index
  */
-void graph_removeedge(graph *g, int vertex1, int vertex2);
+void graph_removeedge(graph *g, int vertex_from, int vertex_to);
 
 /** 
  * Gets the address a vertex stored in memory at a certain vertex index
@@ -116,15 +124,17 @@ void *graph_getvertex(graph *g, int vertex);
  * Gets the address of an edge stored in memory between two verticies.
  * 
  * @param g the graph
- * @param vertex1 the "from" vertex
- * @param vertex2 the "to" vertex
+ * @param vertex_from the "from" vertex
+ * @param vertex_to the "to" vertex
  * 
  * @return the edge object
  */
-void *graph_getedge(graph *g, int vertex1, int vertex2);
+void *graph_getedge(graph *g, int vertex_from, int vertex_to);
 
 /** 
- * Gets a list of edge objects that are connected to this vertex. 
+ * Gets a list of edge objects that are connected to this vertex. This
+ * is a simple NULL terminated list that should be freed when you are
+ * done using it.
  * 
  * @param g the graph
  * @param vertex the vertex index
@@ -134,7 +144,9 @@ void *graph_getedge(graph *g, int vertex1, int vertex2);
 void **graph_getedges(graph *g, int vertex);
 
 /** 
- * Gets the edges associated with an vertex index that are "from" that vertex
+ * Gets the edges associated with an vertex index that are "from" that
+ * vertex. This is a simple NULL terminated list, that should be freed
+ * when you are done using it
  * 
  * @param g the graph
  * @param vertex the vertex index
@@ -144,7 +156,9 @@ void **graph_getedges(graph *g, int vertex);
 void **graph_getstartedges(graph *g, int vertex);
 
 /** 
- * Gets the edges associated with an vertex index that are "to" that vertex
+ * Gets the edges associated with an vertex index that are "to" that
+ * vertex. This is a simple NULL terminated list, that should be freed
+ * when you are done using it.
  * 
  * @param g the graph
  * @param vertex the vertex index
@@ -154,9 +168,39 @@ void **graph_getstartedges(graph *g, int vertex);
 void **graph_getendedges(graph *g, int vertex);
 
 /** 
- * Frees the memory associated with a graph. This includes all edges and verticies
+ * Gets the number of edges that are attached to a vertex
  * 
- * @param g 
+ * @param g the graph
+ * @param vertex the vertex
+ * 
+ * @return the number of attached edges, of -1 on error
+ */
+int graph_nedges(graph *g, int vertex);
+
+/** 
+ * Get the number of edges that are incoming to a vertex
+ * 
+ * @param g the graph
+ * @param vertex the vertex
+ * 
+ * @return the number of incoming edges, or -1 on error
+ */
+int graph_ninedges(graph *g, int vertex);
+
+/** 
+ * Get the number of edges that are outgoing from a vertex
+ * 
+ * @param g the graph
+ * @param vertex the vertex
+ * 
+ * @return the number of outgoing edges, or -1 on error
+ */
+int graph_noutedges(graph *g, int vertex);
+
+/** 
+ * Frees the memory associated with a graph. This includes all edges and verticie
+ * 
+ * @param g the graph to free
  */
 void graph_free(graph *g);
 

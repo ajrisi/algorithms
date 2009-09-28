@@ -17,15 +17,28 @@
 
 typedef void*(*graph_dupedge_fn)(void*);
 typedef void*(*graph_dupvertex_fn)(void*);
-typedef void*(*graph_freeedge_fn)(void*);
-typedef void*(*graph_freevertex_fn)(void*);
+typedef void(*graph_freeedge_fn)(void*);
+typedef void(*graph_freevertex_fn)(void*);
 
+typedef struct edge_s edge;
+struct edge_s {
+  int vertex_from;
+  int vertex_to;
+  void *data;
+  int index;
+};
+
+/*typedef struct vertex_s vertex;
+struct vertex_s {
+  void *data;
+  int index;
+  };*/
 
 typedef struct graph_s graph;
 struct graph_s {
   int max_verticies;
-  void *edges;
-  void *verticies;
+  edge **edges;
+  void **verticies;
   int nedges;
   int nverticies;
 
@@ -88,7 +101,7 @@ int graph_addvertex(graph *g, void *vertex);
  * @param vertex_from the "from" vertex
  * @param vertex_to the "to" vertex
  * 
- * @return the total number of edges in the graph, or -1 on error
+ * @return the edge index number
  */
 int graph_addedge(graph *g, void *edge, int vertex_from, int vertex_to);
 
@@ -129,7 +142,7 @@ void *graph_getvertex(graph *g, int vertex);
  * 
  * @return the edge object
  */
-void *graph_getedge(graph *g, int vertex_from, int vertex_to);
+edge *graph_getedge(graph *g, int vertex_from, int vertex_to);
 
 /** 
  * Gets a list of edge objects that are connected to this vertex. This
@@ -141,7 +154,7 @@ void *graph_getedge(graph *g, int vertex_from, int vertex_to);
  * 
  * @return an array of void* edge objects.
  */
-void **graph_getedges(graph *g, int vertex);
+edge **graph_getedges(graph *g, int vertex);
 
 /** 
  * Gets the edges associated with an vertex index that are "from" that
@@ -153,7 +166,7 @@ void **graph_getedges(graph *g, int vertex);
  * 
  * @return a void* array of edge objects
  */
-void **graph_getstartedges(graph *g, int vertex);
+edge **graph_getoutedges(graph *g, int vertex);
 
 /** 
  * Gets the edges associated with an vertex index that are "to" that
@@ -165,7 +178,7 @@ void **graph_getstartedges(graph *g, int vertex);
  * 
  * @return a void* array of edge objects
  */
-void **graph_getendedges(graph *g, int vertex);
+edge **graph_getinedges(graph *g, int vertex);
 
 /** 
  * Gets the number of edges that are attached to a vertex

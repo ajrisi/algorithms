@@ -203,7 +203,8 @@ int graph_get_edge_dst(graph *g, int edge_index);
 void *graph_get_edge(graph *g, int edge_index);
 
 /** 
- * Frees the memory associated with a graph. This includes all edges and verticie
+ * Frees the memory associated with a graph. This includes all edges
+ * and verticies
  * 
  * @param g the graph to free
  */

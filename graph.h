@@ -27,6 +27,7 @@ struct graph_s {
   void **verticies;
   int nedges;
   int nverticies;
+  int next_free_vertex;
 
   graph_dupedge_fn dupedge_fn;
   graph_dupvertex_fn dupvertex_fn;
@@ -203,8 +204,7 @@ int graph_get_edge_dst(graph *g, int edge_index);
 void *graph_get_edge(graph *g, int edge_index);
 
 /** 
- * Frees the memory associated with a graph. This includes all edges
- * and verticies
+ * Frees the memory associated with a graph. This includes all edges and verticie
  * 
  * @param g the graph to free
  */

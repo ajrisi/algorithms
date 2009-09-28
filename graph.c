@@ -15,6 +15,7 @@
 
 
 static int row_col_to_1d(int row, int col, int width);
+static int find_next_free_vertex(graph *g);
 
 graph *graph_new(int max_verticies,
 		 graph_dupedge_fn dupedge_fn,
@@ -47,6 +48,7 @@ graph *graph_new(int max_verticies,
   memset((void*)g->verticies, 0, sizeof(void*)*max_verticies);
 
   g->max_verticies = max_verticies;
+  g->next_free_vertex = 0;
 
   g->nedges = 0;
   g->nverticies = 0;
@@ -67,18 +69,22 @@ int graph_isfull(graph *g)
     return -1;
   }
 
-  return (g->nverticies >= g->max_verticies);
+  return (find_next_free_vertex(g) == -1);
 }
 
 int graph_add_vertex(graph *g, void *vertex)
 {
+  int v_index;
   void *add_vertex;
 
   if(g == NULL) {
     return -1;
   }
 
-  if(graph_isfull(g)) {
+  v_index = find_next_free_vertex(g);
+
+  /* is there an empty slot in the graph? */
+  if(v_index == -1) {
     return -1;
   }
 
@@ -88,7 +94,7 @@ int graph_add_vertex(graph *g, void *vertex)
     add_vertex = vertex;
   }
   
-  g->verticies[g->nverticies] = add_vertex;
+  g->verticies[v_index] = add_vertex;
 
   return g->nverticies++;
 }
@@ -114,6 +120,11 @@ int graph_add_edge(graph *g, void *edge_data, int vertex_from, int vertex_to)
     edge_data_copy = g->dupedge_fn(edge_data);
   } else {
     edge_data_copy = edge_data;
+  }
+
+  if(g->edges[edge_index] != NULL) {
+    /* if there was an edge there, remove it */
+    graph_remove_edge(g, edge_index);
   }
 
   g->edges[edge_index] = edge_data_copy;
@@ -467,3 +478,19 @@ static int row_col_to_1d(int row, int col, int width)
   return(row*width)+col;
 }
 
+static int find_next_free_vertex(graph *g)
+{
+  int nfv;
+  int start;
+
+  nfv = g->nverticies % g->max_verticies;
+  start = nfv;
+  while(g->verticies[nfv] != NULL) {
+    nfv = (nfv + 1)%g->max_verticies;
+    if(nfv == start) {
+      /* got back to where we started, and we didn't find an empty slot */
+      return -1;
+    }
+  }
+  return nfv;
+}

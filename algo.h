@@ -13,7 +13,8 @@
 #ifndef ALGO_H_
 #define ALGO_H_
 
-#include "minheap.h"
+#include "graph.h"
+#include "heap.h"
 #include "prng.h"
 
 #endif

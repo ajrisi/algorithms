@@ -30,12 +30,12 @@ graph *graph_new(int max_verticies,
 
 
   /* edges */
-  g->edges = malloc(sizeof(edge*)*max_verticies*max_verticies);
+  g->edges = malloc(sizeof(void*)*max_verticies*max_verticies);
   if(g->edges == NULL) {
     free(g);
     return NULL;
   }
-  memset((void*)g->edges, 0, sizeof(edge*)*max_verticies*max_verticies);
+  memset((void*)g->edges, 0, sizeof(void*)*max_verticies*max_verticies);
 
   /* verticies */
   g->verticies = malloc(sizeof(void*)*max_verticies);
@@ -70,7 +70,7 @@ int graph_isfull(graph *g)
   return (g->nverticies >= g->max_verticies);
 }
 
-int graph_addvertex(graph *g, void *vertex)
+int graph_add_vertex(graph *g, void *vertex)
 {
   void *add_vertex;
 
@@ -93,45 +93,37 @@ int graph_addvertex(graph *g, void *vertex)
   return g->nverticies++;
 }
 
-int graph_addedge(graph *g, void *edge_data, int vertex_from, int vertex_to)
+int graph_add_edge(graph *g, void *edge_data, int vertex_from, int vertex_to)
 {
-  edge *add_edge;
+  int edge_index;
+  void *edge_data_copy;
 
   if(g == NULL) {
     return -1;
   }
 
   /* check to make sure there is a vertex at vertex_from, vertex_to */
-  if((graph_getvertex(g, vertex_from) == NULL) ||
-     (graph_getvertex(g, vertex_to) == NULL)) {
+  if((graph_get_vertex(g, vertex_from) == NULL) ||
+     (graph_get_vertex(g, vertex_to) == NULL)) {
     return -1;
   }
 
-  /* allocate some space for the edge object */
-  add_edge = (edge*)malloc(sizeof(edge));
-  if(add_edge == NULL) {
-    return -1;
-  }
-  memset(add_edge, 0, sizeof(edge));
-
-  add_edge->vertex_from = vertex_from;
-  add_edge->vertex_to = vertex_to;
-  add_edge->index = row_col_to_1d(vertex_from, vertex_to, g->max_verticies);
+  edge_index = row_col_to_1d(vertex_from, vertex_to, g->max_verticies);
 
   if(g->dupedge_fn != NULL) {
-    add_edge->data = g->dupedge_fn(edge_data);
+    edge_data_copy = g->dupedge_fn(edge_data);
   } else {
-    add_edge->data = edge_data;
+    edge_data_copy = edge_data;
   }
 
-  g->edges[add_edge->index] = add_edge;
+  g->edges[edge_index] = edge_data_copy;
   
   g->nedges++;
   
-  return add_edge->index;
+  return edge_index;
 }
 
-void graph_removevertex(graph *g, int vertex)
+void graph_remove_vertex(graph *g, int vertex)
 {
   int i;
 
@@ -150,14 +142,14 @@ void graph_removevertex(graph *g, int vertex)
 
   for(i = 0; i < g->max_verticies; i++) {
     /* remove the outgoing, then the incoming */
-    graph_removeedge(g, vertex, i);
-    graph_removeedge(g, i, vertex);
+    graph_remove_edge(g, row_col_to_1d(vertex, i, g->max_verticies));
+    graph_remove_edge(g, row_col_to_1d(i, vertex, g->max_verticies));
   }
 
   /* did we manage vertex memory? */
   if(g->freevertex_fn != NULL) {
     /* free the vertex itself */
-    g->freevertex_fn(graph_getvertex(g, vertex));
+    g->freevertex_fn(graph_get_vertex(g, vertex));
   }  
 
   g->verticies[vertex] = NULL;
@@ -165,37 +157,36 @@ void graph_removevertex(graph *g, int vertex)
   g->nverticies--;
 }
 
-void graph_removeedge(graph *g, int vertex_from, int vertex_to)
+void graph_remove_edge(graph *g, int edge_index)
 {
-  edge *edge_to_remove;
-
+  void *edge_to_remove;
+    
   if(g == NULL) {
     return;
   }
-
+  
   /* make sure that these verticies actually exist */
-  if((graph_getvertex(g, vertex_from) == NULL) ||
-     (graph_getvertex(g, vertex_to) == NULL)) {
+  if((graph_get_vertex(g, graph_get_edge_src(g, edge_index)) == NULL) ||
+     (graph_get_vertex(g, graph_get_edge_dst(g, edge_index)) == NULL)) {
     return;
   }
 
-  edge_to_remove = graph_getedge(g, vertex_from, vertex_to);
+  edge_to_remove = graph_get_edge(g, edge_index);
   
   if(edge_to_remove == NULL) {
     return;
   }
 
   if(g->freeedge_fn != NULL) {
-    g->freeedge_fn(edge_to_remove->data);
+    g->freeedge_fn(edge_to_remove);
   }
 
-  g->edges[edge_to_remove->index] = NULL;
-  free(edge_to_remove);
+  g->edges[edge_index] = NULL;
 
   g->nedges--;
 }
 
-void *graph_getvertex(graph *g, int vertex)
+void *graph_get_vertex(graph *g, int vertex)
 {
   if(g == NULL) {
     return NULL;
@@ -208,29 +199,29 @@ void *graph_getvertex(graph *g, int vertex)
   return g->verticies[vertex];
 }
 
-edge *graph_getedge(graph *g, int vertex_from, int vertex_to)
+void *graph_get_edge(graph *g, int edge_index)
 {
-  int edge_index;
-
   if(g == NULL) {
     return NULL;
   }
 
-  if((graph_getvertex(g, vertex_from) == NULL) ||
-     (graph_getvertex(g, vertex_to) == NULL)) {
+  if((graph_get_vertex(g, graph_get_edge_src(g, edge_index)) == NULL) ||
+     (graph_get_vertex(g, graph_get_edge_dst(g, edge_index)) == NULL)) {
     return NULL;
   }
 
-  edge_index = row_col_to_1d(vertex_from, vertex_to, g->max_verticies);
+  if(edge_index >= (g->max_verticies)*(g->max_verticies)) {
+    return NULL;
+  }
 
   return g->edges[edge_index];
 }
 
-edge **graph_getedges(graph *g, int vertex)
+int *graph_get_edges(graph *g, int vertex)
 {
-  edge **from_edges;
-  edge **to_edges;
-  edge **full_list;
+  int *from_edges;
+  int *to_edges;
+  int *full_list;
   int nedges;
   int i;
   int full_idx;
@@ -246,36 +237,39 @@ edge **graph_getedges(graph *g, int vertex)
   nedges = graph_nedges(g, vertex) + 1;
 
   /* allocate the space for the list */
-  full_list = malloc(sizeof(edge*)*nedges);
+  full_list = malloc(sizeof(int)*nedges);
   if(full_list == NULL) {
     return NULL;
   }
-  memset(full_list, 0, sizeof(edge*)*nedges);
+  memset(full_list, 0, sizeof(int)*nedges);
   full_idx = 0;
 
   /* get the outgoing edges, and copy them in */
-  from_edges = graph_getoutedges(g, vertex);
   i = 0;
-  while(from_edges[i] != NULL) {
+  from_edges = graph_get_edges_src(g, vertex);
+  while(from_edges[i] != -1) {
     full_list[full_idx++] = from_edges[i++];
   }
   free(from_edges);
 
   /* get the incoming edges, copy them in */
-  to_edges = graph_getinedges(g, vertex);
   i = 0;
-  while(to_edges[i] != NULL) {
+  to_edges = graph_get_edges_dst(g, vertex);
+  while(to_edges[i] != -1) {
     full_list[full_idx++] = to_edges[i++];
   }
   free(to_edges);
 
+  full_list[full_idx] = -1;
+
   return full_list;
 }
 
-edge **graph_getoutedges(graph *g, int vertex)
+int *graph_get_edges_src(graph *g, int vertex)
 {
-  edge **full_list;
-  edge *copy_edge;
+  int *full_list;
+  void *copy_edge;
+  int edge_index;
   int nedges;
   int i;
   int full_idx;
@@ -288,33 +282,35 @@ edge **graph_getoutedges(graph *g, int vertex)
     return NULL;
   }
 
-  /* add 1 so that we can return a NULL at the end of the list */
-  nedges = graph_noutedges(g, vertex) + 1;
+  nedges = graph_nedges_src(g, vertex) + 1;
 
   /* allocate the space for the list */
-  full_list = malloc(sizeof(edge*)*nedges);
+  full_list = malloc(sizeof(int)*nedges);
   if(full_list == NULL) {
     return NULL;
   }
-  memset(full_list, 0, sizeof(edge*)*nedges);
+  memset(full_list, 0, sizeof(int)*nedges);
   full_idx = 0;
-
 
   /* get the from edges, and copy them in */
   for(i = 0; i < g->max_verticies; i++) {
-    copy_edge = graph_getedge(g, vertex, i);
+    edge_index = row_col_to_1d(vertex, i, g->max_verticies);
+    copy_edge = graph_get_edge(g, edge_index);
     if(copy_edge != NULL) {
-      full_list[full_idx++] = copy_edge;
+      full_list[full_idx++] = edge_index;
     }
   }
+
+  full_list[full_idx] = -1;
 
   return full_list;
 }
 
-edge **graph_getinedges(graph *g, int vertex)
+int *graph_get_edges_dst(graph *g, int vertex)
 {
-  edge **full_list;
-  edge *copy_edge;
+  int *full_list;
+  int *copy_edge;
+  int edge_index;
   int nedges;
   int i;
   int full_idx;
@@ -327,27 +323,30 @@ edge **graph_getinedges(graph *g, int vertex)
     return NULL;
   }
 
-  nedges = graph_ninedges(g, vertex) + 1;
+  nedges = graph_nedges_dst(g, vertex) + 1;
 
   /* allocate the space for the list */
-  full_list = malloc(sizeof(edge*) * nedges);
+  full_list = malloc(sizeof(int)*nedges);
   if(full_list == NULL) {
     return NULL;
   }
-  memset(full_list, 0, sizeof(edge*) * nedges);
+  memset(full_list, 0, sizeof(int)*nedges);
   full_idx = 0;
 
   /* get the from edges, and copy them in */
   for(i = 0; i < g->max_verticies; i++) {
-    copy_edge = graph_getedge(g, i, vertex);
+    edge_index = row_col_to_1d(i, vertex, g->max_verticies);
+    copy_edge = graph_get_edge(g, edge_index);
     if(copy_edge != NULL) {
-      full_list[full_idx++] = copy_edge;
+      full_list[full_idx++] = edge_index;
     }
   }
 
+  full_list[full_idx] = -1;
+
   return full_list;
 }
-
+ 
 int graph_nedges(graph *g, int vertex)
 {
   int total_edges;
@@ -362,13 +361,13 @@ int graph_nedges(graph *g, int vertex)
 
   total_edges = 0;
   
-  total_edges += graph_ninedges(g, vertex);
-  total_edges += graph_noutedges(g, vertex);
+  total_edges += graph_nedges_src(g, vertex);
+  total_edges += graph_nedges_dst(g, vertex);
 
   return total_edges;
 }
 
-int graph_ninedges(graph *g, int vertex)
+int graph_nedges_dst(graph *g, int vertex)
 {
   int i;
   int edge_index;
@@ -395,7 +394,7 @@ int graph_ninedges(graph *g, int vertex)
 }
 	
 
-int graph_noutedges(graph *g, int vertex)
+int graph_nedges_src(graph *g, int vertex)
 {
   int i;
   int edge_index;
@@ -421,25 +420,40 @@ int graph_noutedges(graph *g, int vertex)
   return total_edges;
 }
 
+int graph_get_edge_src(graph *g, int edge_index)
+{
+  if(g == NULL) {
+    return -1;
+  }
+  return (edge_index - graph_get_edge_dst(g, edge_index)) / g->max_verticies;
+}
+
+int graph_get_edge_dst(graph *g, int edge_index)
+{
+  if(g == NULL) {
+    return -1;
+  }
+  return edge_index % g->max_verticies;
+}
+
 void graph_free(graph *g)
 {
   int i;
-
+  
   if(g == NULL) {
     return;
   }
-
+  
   /* for vertex in the graph, call the free vertex routine. This will
      free all of the edges too */
   for(i = 0; i < g->max_verticies; i++) {
-    graph_removevertex(g, i);
+    graph_remove_vertex(g, i);
   }
 
   free(g->edges);
   free(g->verticies);
   
   free(g);
-
 }
 
 

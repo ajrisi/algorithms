@@ -20,24 +20,10 @@ typedef void*(*graph_dupvertex_fn)(void*);
 typedef void(*graph_freeedge_fn)(void*);
 typedef void(*graph_freevertex_fn)(void*);
 
-typedef struct edge_s edge;
-struct edge_s {
-  int vertex_from;
-  int vertex_to;
-  void *data;
-  int index;
-};
-
-/*typedef struct vertex_s vertex;
-struct vertex_s {
-  void *data;
-  int index;
-  };*/
-
 typedef struct graph_s graph;
 struct graph_s {
   int max_verticies;
-  edge **edges;
+  void **edges;
   void **verticies;
   int nedges;
   int nverticies;
@@ -90,20 +76,20 @@ int graph_isfull(graph *g);
  *         the pointer of the vertex in memory later. Will return -1
  *         on error
  */
-int graph_addvertex(graph *g, void *vertex);
+int graph_add_vertex(graph *g, void *vertex);
 
 /** 
  * Adds an edge to the graph, the edge is copied if a dup function was
  * provided. The edge is added between two vertex indicies.
  * 
  * @param g the graph
- * @param edge the edge to add
+ * @param edge_data the edge to add
  * @param vertex_from the "from" vertex
  * @param vertex_to the "to" vertex
  * 
  * @return the edge index number
  */
-int graph_addedge(graph *g, void *edge, int vertex_from, int vertex_to);
+int graph_add_edge(graph *g, void *edge_data, int vertex_from, int vertex_to);
 
 /** 
  * Removes a vertex from the graph. This "breaks" any edges to and
@@ -112,7 +98,7 @@ int graph_addedge(graph *g, void *edge, int vertex_from, int vertex_to);
  * @param g the graph
  * @param vertex the vertex index to remove.
  */
-void graph_removevertex(graph *g, int vertex);
+void graph_remove_vertex(graph *g, int vertex);
 
 /** 
  * Remove an edge from the graph
@@ -121,7 +107,7 @@ void graph_removevertex(graph *g, int vertex);
  * @param vertex_from the "from" vertex index
  * @param vertex_to the "to" vertex index
  */
-void graph_removeedge(graph *g, int vertex_from, int vertex_to);
+void graph_remove_edge(graph *g, int edge_index);
 
 /** 
  * Gets the address a vertex stored in memory at a certain vertex index
@@ -131,18 +117,17 @@ void graph_removeedge(graph *g, int vertex_from, int vertex_to);
  * 
  * @return the vertex object
  */
-void *graph_getvertex(graph *g, int vertex);
+void *graph_get_vertex(graph *g, int vertex);
 
 /** 
  * Gets the address of an edge stored in memory between two verticies.
  * 
  * @param g the graph
- * @param vertex_from the "from" vertex
- * @param vertex_to the "to" vertex
+ * @param edge_index the index of the edge
  * 
  * @return the edge object
  */
-edge *graph_getedge(graph *g, int vertex_from, int vertex_to);
+void *graph_get_edge(graph *g, int edge_index);
 
 /** 
  * Gets a list of edge objects that are connected to this vertex. This
@@ -154,7 +139,7 @@ edge *graph_getedge(graph *g, int vertex_from, int vertex_to);
  * 
  * @return an array of void* edge objects.
  */
-edge **graph_getedges(graph *g, int vertex);
+int *graph_get_edges(graph *g, int vertex);
 
 /** 
  * Gets the edges associated with an vertex index that are "from" that
@@ -166,7 +151,7 @@ edge **graph_getedges(graph *g, int vertex);
  * 
  * @return a void* array of edge objects
  */
-edge **graph_getoutedges(graph *g, int vertex);
+int *graph_get_edges_src(graph *g, int vertex);
 
 /** 
  * Gets the edges associated with an vertex index that are "to" that
@@ -178,7 +163,7 @@ edge **graph_getoutedges(graph *g, int vertex);
  * 
  * @return a void* array of edge objects
  */
-edge **graph_getinedges(graph *g, int vertex);
+int *graph_get_edges_dst(graph *g, int vertex);
 
 /** 
  * Gets the number of edges that are attached to a vertex
@@ -198,7 +183,7 @@ int graph_nedges(graph *g, int vertex);
  * 
  * @return the number of incoming edges, or -1 on error
  */
-int graph_ninedges(graph *g, int vertex);
+int graph_nedges_dst(graph *g, int vertex);
 
 /** 
  * Get the number of edges that are outgoing from a vertex
@@ -208,7 +193,14 @@ int graph_ninedges(graph *g, int vertex);
  * 
  * @return the number of outgoing edges, or -1 on error
  */
-int graph_noutedges(graph *g, int vertex);
+int graph_nedges_src(graph *g, int vertex);
+
+
+int graph_get_edge_src(graph *g, int edge_index);
+
+int graph_get_edge_dst(graph *g, int edge_index);
+
+void *graph_get_edge(graph *g, int edge_index);
 
 /** 
  * Frees the memory associated with a graph. This includes all edges and verticie

@@ -17,6 +17,7 @@ typedef void(*dqueue_itemfree_fn)(void*);
 typedef struct queue_item_s queue_item;
 struct queue_item_s {
   void *data;
+  queue_item *prev;
   queue_item *next;
 };
 
@@ -32,60 +33,70 @@ struct dqueue_s
   dqueue_itemfree_fn itemfree_fn;
 };
 
-
-/**
- * Initialize the dqueue to get a new instance of a dqueue.
- * @param maxsize The maximum size of the dqueue.
- * @return A pointer to a dqueue instance.
+/** 
+ * Create a dynamic queue in memory, should be freed when done with
+ * (by using dqueue_free).
+ * 
+ * @param dup_fn a function w/ the prototype void*(*)(void*) that will
+ * duplicate an item that goes in the queue, or NULL
+ * @param free_fn frees an item in the queue, or NULL
+ * 
+ * @return a new queue, or NULL on error
  */
-dqueue* dqueue_init(int max_size);
+dqueue *dqueue_new(dqueue_itemdup_fn itemdup_fn, dqueue_itemfree_fn itemfree_fn);
 
-/**
- * Insert a new element to the end of the dqueue.
- * @param q The dqueue instance.
- * @param item The item to be added to the dqueue.
+/** 
+ * Get a reference to the front of the queue - you do not own this
+ * item, so please, do not free it!
+ * 
+ * @param q the queue
+ * 
+ * @return the item at the head of the queue, or NULL on error
  */
-void dqueue_insert(dqueue *q, void *item);
+void *dqueue_front(dqueue *q);
 
-/**
- * Remove an element from the front of the dqueue.
- * @param q The dqueue instance.
+/** 
+ * Enqueues an item into a queue
+ * 
+ * @param q the queue
+ * @param item the item to enqueue at the head of the queue
+ * 
+ * @return the address of the item on the queue, or NULL on error
  */
-void* dqueue_remove(dqueue *q);
+void *dqueue_enqueue(dqueue *q, void *item);
 
+/** 
+ * Dequeues the item at the end of the queue
+ * 
+ * @param q the queue
+ * 
+ * @return the item at the end of the queue, or NULL on error
+ */
+void *dqueue_dequeue(dqueue *q);
 
-/**
- * Free the dqueue.
- * @param q The dqueue instance to be freed.
+/** 
+ * Returns the size of the queue
+ * 
+ * @param q the queue
+ * 
+ * @return the size of the queue, or 0 on error
+ */
+unsigned int dqueue_size(dqueue *q);
+
+/** 
+ * Returns true if the queue is empty
+ * 
+ * @param q the queue
+ * 
+ * @return 1 on is empty, 0 on is not, and 1 on error
+ */
+int dqueue_isempty(dqueue *q);
+
+/** 
+ * Frees the memory associated with a queue
+ * 
+ * @param q the queue to free
  */
 void dqueue_free(dqueue *q);
 
 
-/**
- * Check if there are elements in the dqueue.
- * @param q The dqueue instance.
- * @return 1 if there are elements in the dqueue, 0 otherwise.
- */
-int dqueue_has_elements(dqueue *q);
-
-
-/**
- * Add a listener to a dqueue.
- * @param q The queoe to attach the listener to.
- * @param listener The listener to be added.
- */
-void dqueue_add_listener(dqueue *q, dqueue_notify_listener listener);
-
-
-/**
- * Remove a listener from a dqueue.
- * @param listener The listener to be removed.
- */
-void dqueue_remove_listener(dqueue *q, dqueue_notify_listener listener);
-
-
-/**
- * Clear all the listeners from a dqueue.
- * @param q The dqueue whose listeners are to be cleared.
- */
-void dqueue_clear_listeners(dqueue *q);

@@ -16,5 +16,6 @@
 #include "graph.h"
 #include "heap.h"
 #include "prng.h"
+#include "dqueue.h"
 
 #endif

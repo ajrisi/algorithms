@@ -16,5 +16,5 @@ clean:
 	rm -f $(TARGET) 2> /dev/null
 	rm -f *.o 2> /dev/null
 
-dist-clean:	clean
+distclean:	clean
 	rm -f *~ 2> /dev/null

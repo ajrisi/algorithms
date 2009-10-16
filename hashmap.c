@@ -76,7 +76,6 @@
    Make some better usage examples than the test suite & markov.
 */
 
-#include <stdlib.h>
 #include "hashmap.h"
 
 /* Note: version when expressed in decimal, is of the form:  */
@@ -90,6 +89,7 @@
 /* This is the entity that remembers all about the database  */
 /* It occurs in the users data space, keeping the system     */
 /* reentrant, because it is passed to all entry routines.    */
+typedef struct hashmap_s hashmap;
 typedef struct hshtag {
    void*          *htbl;      /* points to an array of void* */
    unsigned long   currentsz;          /* size of that array */

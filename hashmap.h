@@ -13,6 +13,8 @@
 #ifndef _HASHMAP_H_
 #define _HASHMAP_H_
 
+#include <stdlib.h>
+
 #ifdef __cplusplus
 extern "C"
 {

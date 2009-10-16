@@ -196,11 +196,34 @@ int graph_nedges_dst(graph *g, int vertex);
  */
 int graph_nedges_src(graph *g, int vertex);
 
-
+/** 
+ * Returns the index of the source for a given edge
+ * 
+ * @param g the graph
+ * @param edge_index the edge index
+ * 
+ * @return the vertex index of the source
+ */
 int graph_get_edge_src(graph *g, int edge_index);
 
+/** 
+ * Returns the index of the destination for a given edge
+ * 
+ * @param g the graph
+ * @param edge_index the edge index
+ * 
+ * @return the vertex index of the destinaton
+ */
 int graph_get_edge_dst(graph *g, int edge_index);
 
+/** 
+ * Returns the edge data at a given edge index
+ * 
+ * @param g the graph
+ * @param edge_index the edge index
+ * 
+ * @return the edge data
+ */
 void *graph_get_edge(graph *g, int edge_index);
 
 /** 

@@ -18,7 +18,6 @@ typedef struct queue_item_s queue_item;
 struct queue_item_s {
   void *data;
   queue_item *prev;
-  queue_item *next;
 };
 
 typedef struct dqueue_s dqueue;

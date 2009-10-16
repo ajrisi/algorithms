@@ -26,14 +26,17 @@ void *dqueue_front(dqueue *q)
     return NULL;
   }
 
-  return q->head->data;
+  if(q->head == NULL) {
+    return NULL;
+  }
+
+  return q->tail->data;
 }
 
 
 void *dqueue_enqueue(dqueue *q, void *item)
 {
-  void *insert_item;
-  queue_item *oldhead;
+  queue_item *new_item;
   /* an item is enqueued by duplicating it, setting it as the head,
      and setting its next to the old head */
   
@@ -42,37 +45,32 @@ void *dqueue_enqueue(dqueue *q, void *item)
     return NULL;
   }
 
-  oldhead = q->head;
-  
-  q->head = (queue_item *)calloc(1, sizeof(queue_item));
-  if(q->head == NULL) {
-    q->head = oldhead;
+  new_item = (queue_item *)calloc(1, sizeof(queue_item));
+  if(new_item == NULL) {
     return NULL;
   }
 
-  oldhead->prev = q->head;
-  q->head->next = oldhead;
-  q->head->prev = NULL;
-
+  /* init the new item */
   if(q->itemdup_fn != NULL) {
-    insert_item = q->itemdup_fn(item);
-    if(insert_item == NULL) {
-      return NULL;
-    }
+    new_item->data = q->itemdup_fn(item);
   } else {
-    insert_item = item;
+    new_item->data = item;
   }
 
-  q->head->data = insert_item;
+  new_item->prev = NULL;
 
-  if(q->size == 0) {
-    /* this is the first item, so it is also the tail */
+  if(q->head != NULL) {
+    q->head->prev = new_item;
+    q->head = new_item;
+  } else {
+    /* if the head is null, the queue is empty */
+    q->head = new_item;
     q->tail = q->head;
   }
 
   q->size++;
 
-  return insert_item;
+  return new_item->data;
 }
 
 void *dqueue_dequeue(dqueue *q)
@@ -84,19 +82,22 @@ void *dqueue_dequeue(dqueue *q)
     return NULL;
   }
 
-  if(q->size == 0) {
+  if(q->tail == NULL) {
     return NULL;
   }
 
   oldtail = q->tail;
   q->tail = oldtail->prev;
-  q->tail->next = NULL;
 
   oldtail_data = oldtail->data;
   
   free(oldtail);
   
   q->size--;
+
+  if(q->tail == NULL) {
+    q->head = NULL;
+  }
 
   return oldtail_data;
 }
@@ -115,28 +116,34 @@ int dqueue_isempty(dqueue *q)
   if(q == NULL) {
     return 1;
   }
-  return (q->head == NULL);
+  return (q->size == 0);
 }
 
 void dqueue_free(dqueue *q)
 {
-  queue_item *i;
+  void *tmp;
 
   if(q == NULL) {
     return;
   }
-
-
-  for(i = q->head; i != NULL; i = i->next) {
-    if(q->itemfree_fn != NULL) {
-      q->itemfree_fn(i->data);
-    }
-    if(i == q->tail) {
-      free(i);
-    } else {
-      free(i->prev);
+  
+  while(!dqueue_isempty(q)) {
+    tmp = dqueue_dequeue(q);
+    if((q->itemfree_fn != NULL) &&
+       (tmp != NULL)) {
+      q->itemfree_fn(tmp);
     }
   }
   
   free(q);
 }
+
+void *dupint(void *i)
+{
+  int *ic;
+  ic = malloc(sizeof(int));
+  *ic = *(int*)i;
+  return (void*)ic;
+}
+
+

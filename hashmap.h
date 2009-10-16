@@ -3,7 +3,8 @@
  * @author Adam Risi <ajrisi@gmail.com>
  * @date   Fri Oct 16 12:16:23 2009
  * 
- * @brief  A hash map implementaton in C
+ * @brief A hash map implementaton in C - originally written by
+ * C. B. Falconer
  * 
  * 
  */
@@ -14,45 +15,6 @@
 #define _HASHMAP_H_
 
 #include <stdlib.h>
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-/*  Copyright (C) 2002 by C.B. Falconer
-
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-
-  This program is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
-  USA
-
-  I can be contacted by mailto:cbfalconer@worldnet.att.net
-           or at 680 Hartford Tpk., Hamden, CT 06517, USA.
-
-  Should you wish to incorporate this in proprietary software for
-  sale, contact me and we can discuss a different license, such
-  as the GNU Library license or other mutually agreeable terms.
-
-  =========== significant revisions ============
-
-  v 0.0.0.5 Largely due to prodding from:
-      jmccarty@sun1307.ssd.usa.alcatel.com (Mike Mccarty Sr)
-  I have come to the conclusion that a hshdelete function is
-  implementable.  It has been added. This also requires that
-  a 'hdeleted' value be added to the status.
-  The table actually holds hentries-hdeleted active entries.
-*/
 
 /* This is an example of object oriented programming in C, in   */
 /* that it isolates the hashtable functioning from the objects  */
@@ -76,26 +38,6 @@ extern "C"
 
 /* opaque incomplete object */
 typedef struct hshtag hshtbl;
-
-/* Possible error returns, powers of 2 */
-enum hsherr {hshOK = 0, hshNOMEM, hshTBLFULL, hshINTERR = 4};
-
-/* NOTE: probes and misses aids evaluating hash functions       */
-typedef struct hshstats {
-   unsigned long probes, misses,  /* usage statistics */
-                 hentries,        /* current entries count */
-                 hdeleted;        /* deleted entry count */
-   enum hsherr   herror;          /* error status */
-   unsigned int  version;         /* hashlib version */
-} hshstats;
-
-/* Note: version when expressed in decimal, is of the form": */
-/* M.n.v.p  where  M = Major version                         */
-/*                 n = minor version                         */
-/*                 v = variation                             */
-/*                 p = patch                                 */
-/* with all values except M being single decimal digits.     */
-
 
 /* -------------- The auxiliary function types ---------------- */
 /* The actual storage for the various void * item pointers is   */
@@ -141,6 +83,44 @@ typedef int (*hshexecfn)(void *item, void *datum, void *xtra);
 
 /* ------------ END of auxiliary function types ------------- */
 
+/* Possible error returns, powers of 2 */
+typedef enum hsherr_e hsherr;
+enum hsherr_e {
+  hshOK      = 0,
+  hshNOMEM   = 1, 
+  hshTBLFULL = 2, 
+  hshINTERR  = 4
+};
+
+/* NOTE: probes and misses aids evaluating hash functions       */
+typedef struct hshstats_s hshstats;
+struct hshstats_s {
+  unsigned long probes;
+  unsigned long misses;
+  unsigned long hentries;
+  unsigned long hdeleted;
+  hsherr herror;
+};
+
+/* This is the entity that remembers all about the database  */
+/* It occurs in the users data space, keeping the system     */
+/* reentrant, because it is passed to all entry routines.    */
+typedef struct hashmap_s hashmap;
+/* used to be hashtag, a pointer was hashtabptr */
+typedef struct hashmap_s* hashtabptr;
+typedef struct hashmap_s hshtag;
+struct hashmap_s {
+  void **htbl;      /* points to an array of void* */
+  unsigned long currentsz;          /* size of that array */
+  hshfn hash;
+  hshfn rehash;
+  hshcmpfn cmp;
+  hshdupfn dupe;
+  hshfreefn undupe;
+  int hdebug;
+  hshstats hstatus;
+};
+
 /* initialize and return a pointer to the data base */
 hshtbl *hshinit(hshfn hash, hshfn rehash,
                 hshcmpfn cmp,
@@ -150,12 +130,12 @@ hshtbl *hshinit(hshfn hash, hshfn rehash,
 /* 1------------------1 */
 
 /* destroy the data base. Accepts NULL and does nothing */
-void   hshkill(hshtbl *master);
+void hashmap_free(hashmap *m);
 
 /* 1------------------1 */
 
 /* find an existing entry. NULL == notfound */
-void * hshfind(hshtbl *master, void *item);
+void * hshfind(hashmap *master, void *item);
 
 /* 1------------------1 */
 
@@ -164,12 +144,12 @@ void * hshfind(hshtbl *master, void *item);
 /* (originally created by hshdupfn) is up to the   */
 /* application. It is no longer managed by hashlib */
 /* It will usually be disposable by hshfreefn().   */
-void * hshdelete(hshtbl *master, void *item);
+void *hshdelete(hashmap *master, void *item);
 
 /* 1------------------1 */
 
 /* insert an entry.  NULL == failure, else item */
-void * hshinsert(hshtbl *master, void *item);
+void * hshinsert(hashmap *master, void *item);
 
 /* 1------------------1 */
 
@@ -177,46 +157,33 @@ void * hshinsert(hshtbl *master, void *item);
 /* The order of application is arbitrary.  If exec */
 /* returns non-zero (error) the walk stops         */
 /* datum can provide a global data area for exec   */
-int    hshwalk(hshtbl *master, hshexecfn exec, void *datum);
+int hshwalk(hashmap *master, hshexecfn exec, void *datum);
 
 /* 1------------------1 */
 
 /* return various statistics on use of this hshtbl */
-hshstats hshstatus(hshtbl *master);
+hshstats hshstatus(hashmap *master);
 
 /* ============= Useful generic functions ============= */
 
-/* Hash a string quantity */
-unsigned long hshstrhash(const char * string);
-
-/* 1------------------1 */
-
-/* ReHash a string quantity */
-unsigned long hshstrehash(const char * string);
-
 /** 
- * Hashes a string using the sdbm algorithm. Faster than the
- * hshstrhash_rs
- * 
- * @param string string to hash
- * 
- * @return the hash value
- */
-unsigned long hshstrhash_sdbm(const char *string);
-
-/** 
- * Hashes a string using the rs algorithm. Good for a rehash because
- * it is a little slower
+ * Generates a hash for a given string - faster algorithm (sdbm)
  * 
  * @param string the string to hash
  * 
- * @return the hash value
+ * @return a hash for the string
  */
-unsigned long hshstrhash_rs(const char *string);
+unsigned long hshstrhash(const char * string);
 
-#ifdef __cplusplus
-}      /* Corrected per David Titkin 2005-03-14 */
-#endif
+/** 
+ * Re-Hashes a string - the rehash algorithm is allowed to be a little
+ * slower. Uses the "rs" string hashing algorithm
+ * 
+ * @param string the string to hash
+ * 
+ * @return a hash for the string
+ */
+unsigned long hshstrehash(const char * string);
 
 #endif /* _HASHMAP_H_ */
 

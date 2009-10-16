@@ -36,9 +36,6 @@
 /* are normally NOT the same as the pointers passed in to those */
 /* two functions.  This is controlled in hshdupe and hshundupe  */
 
-/* opaque incomplete object */
-typedef struct hshtag hshtbl;
-
 /* -------------- The auxiliary function types ---------------- */
 /* The actual storage for the various void * item pointers is   */
 /* known to the calling program, but not to this library. These */
@@ -106,9 +103,6 @@ struct hshstats_s {
 /* It occurs in the users data space, keeping the system     */
 /* reentrant, because it is passed to all entry routines.    */
 typedef struct hashmap_s hashmap;
-/* used to be hashtag, a pointer was hashtabptr */
-typedef struct hashmap_s* hashtabptr;
-typedef struct hashmap_s hshtag;
 struct hashmap_s {
   void **htbl;      /* points to an array of void* */
   unsigned long currentsz;          /* size of that array */
@@ -122,7 +116,7 @@ struct hashmap_s {
 };
 
 /* initialize and return a pointer to the data base */
-hshtbl *hshinit(hshfn hash, hshfn rehash,
+hashmap *hshinit(hshfn hash, hshfn rehash,
                 hshcmpfn cmp,
                 hshdupfn dupe, hshfreefn undupe,
                 int      hdebug);

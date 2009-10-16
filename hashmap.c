@@ -141,33 +141,41 @@ hashmap *hashmap_new(hshfn hash, hshfn rehash,
 		     hshdupfn dupe, hshfreefn undupe,
 		     int hdebug)
 {
-#define INITSZ 17   /* small prime, for easy testing */
-  
   hashmap *master;
   
-  if (!hash || !rehash || !cmp || !dupe || !undupe)
-    master = NULL;
-  else if ((master = malloc(sizeof *master))) {
-    if ((master->htbl = maketbl(INITSZ))) {
-      master->currentsz = INITSZ;
-      master->hash = hash;
-      master->rehash = rehash;
-      master->cmp = cmp;
-      master->dupe = dupe;
-      master->undupe = undupe;
-      master->hdebug = hdebug;
-      
-      /* initialise the status portion */
-      master->hstatus.probes = master->hstatus.misses = 0;
-      master->hstatus.hentries = 0;
-      master->hstatus.hdeleted = 0;
-      master->hstatus.herror = hshOK;
-    }
-    else {
-      free(master);
-      master = NULL;
-    }
+  if((hash == NULL) ||
+     (rehash == NULL) ||
+     (cmp == NULL) ||
+     (dupe == NULL) ||
+     (undupe == NULL)) {
+    return NULL;
   }
+  
+  master = calloc(1, sizeof(*master));
+  if(master == NULL) {
+    return NULL;
+  }
+  
+  master->htbl = maketbl(HASHMAP_STARTSIZE);
+  if(master->htbl == NULL) {
+    free(master);
+    return NULL;
+  }
+
+  master->currentsz = HASHMAP_STARTSIZE;
+  master->hash = hash;
+  master->rehash = rehash;
+  master->cmp = cmp;
+  master->dupe = dupe;
+  master->undupe = undupe;
+  master->hdebug = hdebug;
+  
+  /* initialise the status portion */
+  master->hstatus.probes = master->hstatus.misses = 0;
+  master->hstatus.hentries = 0;
+  master->hstatus.hdeleted = 0;
+  master->hstatus.herror = hshOK;
+  
   return master;
 }
 

@@ -16,6 +16,9 @@
 
 #include <stdlib.h>
 
+/* this was "a prime, for easy testing" */
+#define HASHMAP_STARTSIZE 17
+
 /* This is an example of object oriented programming in C, in   */
 /* that it isolates the hashtable functioning from the objects  */
 /* it stores and retrieves.  It is expected to be useful in     */
@@ -116,10 +119,10 @@ struct hashmap_s {
 };
 
 /* initialize and return a pointer to the data base */
-hashmap *hshinit(hshfn hash, hshfn rehash,
-                hshcmpfn cmp,
-                hshdupfn dupe, hshfreefn undupe,
-                int      hdebug);
+hashmap *hashmap_new(hshfn hash, hshfn rehash,
+		     hshcmpfn cmp,
+		     hshdupfn dupe, hshfreefn undupe,
+		     int hdebug);
 
 /* 1------------------1 */
 

@@ -17,6 +17,7 @@
 static trie_node *trie_node_new();
 static void trie_node_free(trie_node *tn);
 static trie_node **lookup_node(trie *t, char *key, unsigned int len);
+static int foreach_in(trie_node *n, unsigned int depth, char *s, int(*fn)(char *, void*));
 
 trie *trie_new(void)
 {
@@ -153,8 +154,7 @@ unsigned int trie_size(trie *t)
 
 int trie_foreach(trie *t, int(*foreach_fn)(char *, void*))
 {
-  /* TODO: this is just a stub */
-  return 1;
+  return foreach_in(t->root_node, 0, NULL, foreach_fn);
 }
 
 static trie_node *trie_node_new()
@@ -206,4 +206,33 @@ static trie_node **lookup_node(trie *t, char *key, unsigned int len)
     return &((*n)->next[ (int)*(key + i) ]);
   }
 }
+
+static int foreach_in(trie_node *n, unsigned int depth, char *s, int(*fn)(char *, void*))
+{
+  int i;
+  int j;
+  char *sc;
+
+  if(n == NULL) {
+    return 0;
+  }
+
+  sc = (char*)calloc(depth+2, sizeof(char));
+  if(sc == NULL) {
+    return 1;
+  }
+  memcpy(sc, s, depth);
+
+  for(i = 0; i < 256; i++) {
+    j = foreach_in(n->next[i], ++depth, strcat(s, &(char)i), fn);
+    if(j != 0) {
+      break;
+    }
+  }
+
+  free(sc);
+
+  return fn(s, n->value);
+}
+
 

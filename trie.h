@@ -117,11 +117,12 @@ unsigned int trie_size(trie *t);
  * 
  * @param t the trie
  * @param foreach_fn the function to execute for each value. Each
- *        exec. should return 0 for success, or something else to stop the
- *        foreach
+ *        exec. should return 0 for success, or something else to stop
+ *        the foreach. First param is the key, second the length, and
+ *        third the value
  * 
  * @return 0 on success, other on failure
  */
-int trie_foreach(trie *t, int(*foreach_fn)(char *, void*));
+int trie_foreach(trie *t, int(*foreach_fn)(char *, unsigned int, void*));
 
 #endif

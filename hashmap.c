@@ -102,20 +102,6 @@
 static int primetbl[] = {45, 45, 41, 45, 45, 45, 45, 49,
                          57, 49, 41, 45, 59, 55, 57, 61,
                          63, 61, 45, 79, 0};
-/* So the prime of interest, vs index i into above table,   */
-/* is    ( 2**(FIRSTN + i) ) - primetbl[i]                  */
-/* The above table suffices for about 48,000,000 entries.   */
-
-/* 1------------------1 */
-
-/* return a prime slightly less than 2**(FIRSTN + i) -1 */
-/* return 0 for i value out of range                    */
-static unsigned long ithprime(size_t i)
-{
-  if ((i < sizeof primetbl / sizeof (int)) && (primetbl[i]))
-    return ((1 << (FIRSTN + i)) - primetbl[i]);
-  else return 0;
-} /* ithprime */
 
 /* 1------------------1 */
 
@@ -125,18 +111,6 @@ static unsigned long ithprime(size_t i)
 /* freed old table space is effectively useless for this    */
 /* because of fragmentation. Changing the ratio won't help. */
 /* changed */
-static void **maketbl(unsigned long newsize)
-{
-  void **newtbl;
-  
-  newtbl = calloc(newsize, sizeof(*newtbl));
-  if(newtbl == NULL) {
-    return NULL;
-  }
-  
-  return newtbl;
-}
-
 /* initialize and return a pointer to the data base */
 hashmap *hashmap_new(hshfn hash, hshfn rehash,
 		     hshcmpfn cmp,
@@ -179,6 +153,7 @@ hashmap *hashmap_new(hshfn hash, hshfn rehash,
   return master;
 }
 
+
 void hashmap_free(hashmap *m)
 {
   unsigned long i;
@@ -202,10 +177,140 @@ void hashmap_free(hashmap *m)
   free(m);
 }
 
+
+void *hashmap_insert(hashmap *m, void *item)
+{
+  if ((TSPACE(m) <= 0) && !reorganize(m)) {
+    m->hstatus.herror |= hshTBLFULL;
+    return NULL;
+  }
+
+  return putintbl(m, item, 0);
+}
+
+
+void *hashmap_find(hashmap *m, void *item)
+{
+  unsigned long h;
+
+  h = huntup(m, item);
+  return m->htbl[h];
+}
+
+
+void *hashmap_remove(hashmap *m, void *item)
+{
+  unsigned long h;
+  void *olditem;
+
+  h = huntup(m, item);
+  olditem = m->htbl[h];
+
+  if(olditem != NULL) {
+    /* todo: why arent we setting this to NULL? */
+    m->htbl[h] = (void*)m;
+    m->hstatus.hdeleted++;
+  }
+  
+  return olditem;
+}
+
+
+int hashmap_foreach(hashmap *m, hshexecfn exec, void *datum)
+{
+  int err;
+  unsigned long i;
+  void *hh;
+  
+  if (exec == NULL) {
+    return -1; 
+  }
+
+  for (i = 0; i < m->currentsz; i++) {
+    hh = m->htbl[i];
+    if((hh != NULL) &&
+       (hh != (void*)m)) {
+      err = exec(hh, datum);
+      if(err != 0) {
+	return err;
+      }
+    }
+  }
+
+  return 0;
+}
+
+
+hshstats hashmap_stats(hashmap *m)
+{
+  return m->hstatus;
+}
+
+
+/* ============= Useful generic functions ============= */
+
+/* NOTE: hash is called once per operation, while rehash is
+   called _no more_ than once per operation.  Thus it
+   is preferable that hash be the more efficient.
+*/
+
+unsigned long hshstrhash(const char * string)
+{
+  /* This is an implementation of sdbm string hashing */  
+  unsigned long hash = 0;
+  while(*string) {
+    hash = *string++ + ( hash << 6 ) + ( hash << 16 ) - hash; 
+  }
+  return hash;
+}
+
+unsigned long hshstrehash(const char * string)
+{
+  /* this is an implementation of rs string hashing */
+  unsigned long hash = 0;
+  unsigned long a = 63689;
+  unsigned long b = 378551;
+
+  while(*string) {
+    hash = hash*a + *string++;
+    a *= b;
+  }  
+ 
+  return hash;
+}
+
+static void **maketbl(unsigned long newsize)
+{
+  void **newtbl;
+  
+  newtbl = calloc(newsize, sizeof(*newtbl));
+  if(newtbl == NULL) {
+    return NULL;
+  }
+  
+  return newtbl;
+}
+
+/* So the prime of interest, vs index i into above table,   */
+/* is    ( 2**(FIRSTN + i) ) - primetbl[i]                  */
+/* The above table suffices for about 48,000,000 entries.   */
+
+/* 1------------------1 */
+
+/* return a prime slightly less than 2**(FIRSTN + i) -1 */
+/* return 0 for i value out of range                    */
+static unsigned long ithprime(size_t i)
+{
+  if ((i < sizeof primetbl / sizeof (int)) && (primetbl[i]))
+    return ((1 << (FIRSTN + i)) - primetbl[i]);
+  else return 0;
+} /* ithprime */
+
+
 /* Attempt to insert item at the hth position in the table */
 /* Returns NULL if position already taken or if dupe fails */
 /* (when master->herror is set to hshNOMEM)                */
-static void * inserted(hashmap *master, unsigned long h,
+static void *inserted(hashmap *master, unsigned long h,
                        void *item,
                        int copying)  /* during reorganization */
 {
@@ -230,12 +335,7 @@ static void * inserted(hashmap *master, unsigned long h,
   return master->htbl[h];
 } /* inserted */
 
-/* 1------------------1 */
-
-/* insert an entry.  NULL == failure, else item */
-/* This always succeeds unless memory runs out, */
-/* provided that the hashtable is not full      */
-static void * putintbl(hashmap *master, void *item, int copying)
+static void *putintbl(hashmap *master, void *item, int copying)
 {
   unsigned long h, h2;
   void         *stored;
@@ -252,8 +352,6 @@ static void * putintbl(hashmap *master, void *item, int copying)
   }
   return stored;
 } /* putintbl */
-
-/* 1------------------1 */
 
 /* Increase the table size by roughly a factor of 2    */
 /* reinsert all entries from the old table in the new. */
@@ -313,20 +411,6 @@ static int reorganize(hashmap *master)
   return 0;            /* failure */
 } /* reorganize */
 
-/* 1------------------1 */
-
-void *hashmap_insert(hashmap *m, void *item)
-{
-  if ((TSPACE(m) <= 0) && !reorganize(m)) {
-    m->hstatus.herror |= hshTBLFULL;
-    return NULL;
-  }
-
-  return putintbl(m, item, 0);
-}
-
-/* 1------------------1 */
-
 /* Attempt to find item at the hth position in the table */
 /* counting attempts.  Returns 1 if found, else 0        */
 static int found(hashmap *master, unsigned long h, void *item)
@@ -339,8 +423,6 @@ static int found(hashmap *master, unsigned long h, void *item)
     return !(master->cmp(hh, item));
   else return 0;
 } /* found */
-
-/* 1------------------1 */
 
 /* Find the current hashtbl index for item, or an empty slot */
 static unsigned long huntup(hashmap *master, void *item)
@@ -362,90 +444,3 @@ static unsigned long huntup(hashmap *master, void *item)
   return h;
 } /* huntup */
 
-/* 1------------------1 */
-
-void *hashmap_find(hashmap *m, void *item)
-{
-  unsigned long h;
-
-  h = huntup(m, item);
-  return m->htbl[h];
-}
-
-void *hashmap_remove(hashmap *m, void *item)
-{
-  unsigned long h;
-  void *olditem;
-
-  h = huntup(m, item);
-  olditem = m->htbl[h];
-
-  if(olditem != NULL) {
-    /* todo: why arent we setting this to NULL? */
-    m->htbl[h] = (void*)m;
-    m->hstatus.hdeleted++;
-  }
-  
-  return olditem;
-}
-
-int hashmap_foreach(hashmap *m, hshexecfn exec, void *datum)
-{
-  int err;
-  unsigned long i;
-  void *hh;
-  
-  if (exec == NULL) {
-    return -1; 
-  }
-
-  for (i = 0; i < m->currentsz; i++) {
-    hh = m->htbl[i];
-    if((hh != NULL) &&
-       (hh != (void*)m)) {
-      err = exec(hh, datum);
-      if(err != 0) {
-	return err;
-      }
-    }
-  }
-
-  return 0;
-}
-
-hshstats hashmap_stats(hashmap *m)
-{
-  return m->hstatus;
-}
-
-/* ============= Useful generic functions ============= */
-
-/* NOTE: hash is called once per operation, while rehash is
-   called _no more_ than once per operation.  Thus it
-   is preferable that hash be the more efficient.
-*/
-
-unsigned long hshstrhash(const char * string)
-{
-  /* This is an implementation of sdbm string hashing */  
-  unsigned long hash = 0;
-  while(*string) {
-    hash = *string++ + ( hash << 6 ) + ( hash << 16 ) - hash; 
-  }
-  return hash;
-}
-
-unsigned long hshstrehash(const char * string)
-{
-  /* this is an implementation of rs string hashing */
-  unsigned long hash = 0;
-  unsigned long a = 63689;
-  unsigned long b = 378551;
-
-  while(*string) {
-    hash = hash*a + *string++;
-    a *= b;
-  }  
- 
-  return hash;
-}

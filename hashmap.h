@@ -117,6 +117,18 @@ struct hashmap_s {
   hshstats hstatus;
 };
 
+/**
+ * Private functions
+ * 
+ */
+static void **maketbl(unsigned long newsize);
+static unsigned long ithprime(size_t i);
+static void *inserted(hashmap *master, unsigned long h, void *item, int copying);
+static void *putintbl(hashmap *master, void *item, int copying);
+static int reorganize(hashmap *master);
+static int found(hashmap *master, unsigned long h, void *item);
+static unsigned long huntup(hashmap *master, void *item);
+
 /** 
  * Creates a new hashmap in memory, returns a pointer to it, or NULL
  * on failure

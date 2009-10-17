@@ -122,20 +122,46 @@ void *trie_lookup(trie *t, char *key)
 
 void trie_remove_n(trie *t, char *key, unsigned int len)
 {
+  int i;
+  int allnull;
   trie_node **n;
+
+  allnull = 1;
 
   if(t == NULL) {
     return;
   }
 
-  n = lookup_node(t, key, len);
+  /* remove the terminal */
+  n = lookup_node(t, key, len); 
   if((n != NULL) &&
      (*n != NULL) &&
      ((*n)->value != NULL)) {
     (*n)->value = NULL;
     t->size--;
   }
-  
+
+  /* cleanup the branch  */
+  for(  ;
+	((n != NULL) &&
+	 (*n != NULL)) ;
+	n = lookup_node(t, key, --len)) {
+    
+    allnull = 1;
+    for(i = 0; i < 256; i++) {
+      if( (*n)->next[i] != NULL) {
+	allnull = 0;
+	break;
+      }
+    }
+    
+    if(allnull) {
+      trie_node_free(*n);
+      *n = NULL;
+    }
+    
+  }
+
 }
 
 void trie_remove(trie *t, char *key)
@@ -244,4 +270,5 @@ static int foreach_in(trie_node *n, unsigned int depth, char *s, int(*fn)(char *
 
   return ret;
 }
+
 

@@ -221,7 +221,7 @@ int hashtable_foreach(hashtable *m, hshexecfn exec, void *datum);
  * 
  * @return statistics for the hashtable
  */
-hshstats hashtable_stats(hashtable *m);
+hshstats *hashtable_stats(hashtable *m);
 
 /* ============= Useful generic functions ============= */
 

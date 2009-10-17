@@ -83,6 +83,10 @@ void hashtable_free(hashtable *m)
 
 void *hashtable_insert(hashtable *m, void *item)
 {
+  if(m == NULL) {
+    return NULL;
+  }
+
   if ((TSPACE(m) <= 0) && !reorganize(m)) {
     m->hstatus.herror |= hshTBLFULL;
     return NULL;
@@ -96,6 +100,10 @@ void *hashtable_find(hashtable *m, void *item)
 {
   unsigned long h;
 
+  if(m == NULL) {
+    return NULL;
+  }
+
   h = huntup(m, item);
   return m->htbl[h];
 }
@@ -105,6 +113,10 @@ void *hashtable_remove(hashtable *m, void *item)
 {
   unsigned long h;
   void *olditem;
+
+  if(m == NULL) {
+    return NULL;
+  }
 
   h = huntup(m, item);
   olditem = m->htbl[h];
@@ -124,8 +136,9 @@ int hashtable_foreach(hashtable *m, hshexecfn exec, void *datum)
   int err;
   unsigned long i;
   void *hh;
-  
-  if (exec == NULL) {
+
+  if ((m == NULL) ||
+      (exec == NULL)) {
     return -1; 
   }
 
@@ -143,9 +156,13 @@ int hashtable_foreach(hashtable *m, hshexecfn exec, void *datum)
   return 0;
 }
 
-hshstats hashtable_stats(hashtable *m)
+hshstats *hashtable_stats(hashtable *m)
 {
-  return m->hstatus;
+  if(m == NULL) {
+    return NULL;
+  }
+  
+  return &(m->hstatus);
 }
 
 

@@ -121,7 +121,6 @@ struct hashtable_s {
  * Private functions
  * 
  */
-static void **maketbl(unsigned long newsize);
 static unsigned long ithprime(size_t i);
 static void *inserted(hashtable *master, unsigned long h, void *item, int copying);
 static void *putintbl(hashtable *master, void *item, int copying);

@@ -99,8 +99,8 @@ static int primetbl[] = {45, 45, 41, 45, 45, 45, 45, 49,
                          63, 61, 45, 79, 0};
 
 hashtable *hashtable_new(hshfn hash, hshfn rehash,
-		     hshcmpfn cmp,
-		     hshdupfn dupe, hshfreefn undupe)
+			 hshcmpfn cmp,
+			 hshdupfn dupe, hshfreefn undupe)
 {
   hashtable *master;
   
@@ -309,6 +309,10 @@ static void *inserted(hashtable *master,
 
   if (hh == NULL) {
     /* slot is empty */
+    /* copying is a misnomer here, what it really means is, "am I
+       making a copy of the old table (and thus do not need to dup,
+       its already been dup'd once, or, am I not making a copy-table,
+       and should attempty to make a dup of the item */
     if(copying) {  
       master->htbl[h] = item;
     } else if ((master->htbl[h] = (master->dupe == NULL) ? item : master->dupe(item))) {
@@ -332,21 +336,28 @@ static void *inserted(hashtable *master,
 
 static void *putintbl(hashtable *master, void *item, int copying)
 {
-  unsigned long h, h2;
-  void         *stored;
+  unsigned long h;
+  unsigned long h2;
+  void *stored;
 
   h = master->hash(item) % master->currentsz;
-  if (!(stored = inserted(master, h, item, copying))
-      && master->hstatus.herror == hshOK) {
+  stored = inserted(master, h, item, copying);
+
+  if ((stored == NULL) && 
+      (master->hstatus.herror == hshOK)) {
+    /* if the item was not already in the table, and we do not have
+       any errors */
     h2 = master->rehash(item) % (master->currentsz >> 3) + 1;
     do {       /* we had to go past 1 per item */
       master->hstatus.misses++;
       h = (h + h2) % master->currentsz;
-    } while (!(stored = inserted(master, h, item, copying))
-	     && (master->hstatus.herror == hshOK));
+
+      stored = inserted(master, h, item, copying);
+    } while ((stored == NULL) &&
+	     (master->hstatus.herror == hshOK));
   }
   return stored;
-} /* putintbl */
+}
 
 /* Increase the table size by roughly a factor of 2    */
 /* reinsert all entries from the old table in the new. */

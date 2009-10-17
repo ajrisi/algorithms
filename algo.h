@@ -19,5 +19,6 @@
 #include "dqueue.h"
 #include "hashtable.h"
 #include "hash.h"
+#include "trie.h"
 
 #endif

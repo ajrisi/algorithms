@@ -1,5 +1,16 @@
 #include "hashtable.h"
 
+/**
+ * Private functions
+ * 
+ */
+static unsigned long ithprime(size_t i);
+static void *inserted(hashtable *master, unsigned long h, void *item, int copying);
+static void *putintbl(hashtable *master, void *item, int copying);
+static int reorganize(hashtable *master);
+static int found(hashtable *master, unsigned long h, void *item);
+static unsigned long huntup(hashtable *master, void *item);
+
 /* Threshold above which reorganization is desirable */
 #define TTHRESH(sz) (sz - (sz >> 3))
 

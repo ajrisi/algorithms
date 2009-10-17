@@ -1,6 +1,6 @@
 TARGET=libalgo.a
 
-all: heap.o prng.o graph.o dqueue.o hashtable.o
+all: algo.h heap.o prng.o graph.o dqueue.o hashtable.o
 	ar rcs $(TARGET) heap.o prng.o graph.o dqueue.o hashtable.o
 
 heap.o:	heap.c heap.h

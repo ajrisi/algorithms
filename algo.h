@@ -17,6 +17,6 @@
 #include "heap.h"
 #include "prng.h"
 #include "dqueue.h"
-#include "hashmap.h"
+#include "hashtable.h"
 
 #endif

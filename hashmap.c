@@ -82,6 +82,8 @@
 /* Peculiar definition, never to escape this module and NEVER */
 /* NEVER to be dereferenced.   This is the equivalent of NULL */
 /* NEVER EVER change the name of 'master' anywhere.           */
+
+/* they are using the address of the hashmap as an indicator of a deleted entry */
 #define DELETED (void*)master
 
 /* Threshold above which reorganization is desirable */
@@ -138,8 +140,7 @@ static void **maketbl(unsigned long newsize)
 /* initialize and return a pointer to the data base */
 hashmap *hashmap_new(hshfn hash, hshfn rehash,
 		     hshcmpfn cmp,
-		     hshdupfn dupe, hshfreefn undupe,
-		     int hdebug)
+		     hshdupfn dupe, hshfreefn undupe)
 {
   hashmap *master;
   
@@ -168,7 +169,6 @@ hashmap *hashmap_new(hshfn hash, hshfn rehash,
   master->cmp = cmp;
   master->dupe = dupe;
   master->undupe = undupe;
-  master->hdebug = hdebug;
   
   /* initialise the status portion */
   master->hstatus.probes = master->hstatus.misses = 0;
@@ -187,7 +187,7 @@ void hashmap_free(hashmap *m)
   if(m == NULL) {
     return;
   }
-
+  
   /* unload the actual data storage */
   for (i = 0; i < m->currentsz; i++) {
     /* TODO: check to make sure that we have an undup? */
@@ -315,15 +315,15 @@ static int reorganize(hashmap *master)
 
 /* 1------------------1 */
 
-/* insert an entry.  NULL == failure, else item */
-void *hshinsert(hashmap *master, void *item)
+void *hashmap_insert(hashmap *m, void *item)
 {
-  if ((TSPACE(master) <= 0) && !reorganize(master)) {
-    master->hstatus.herror |= hshTBLFULL;
+  if ((TSPACE(m) <= 0) && !reorganize(m)) {
+    m->hstatus.herror |= hshTBLFULL;
     return NULL;
   }
-  return putintbl(master, item, 0);
-} /* hshinsert */
+
+  return putintbl(m, item, 0);
+}
 
 /* 1------------------1 */
 
@@ -364,67 +364,58 @@ static unsigned long huntup(hashmap *master, void *item)
 
 /* 1------------------1 */
 
-/* find an existing entry. NULL == notfound */
-void *hshfind(hashmap *master, void *item)
+void *hashmap_find(hashmap *m, void *item)
 {
   unsigned long h;
 
-  h = huntup(master, item);
-  return master->htbl[h];
-} /* hshfind */
+  h = huntup(m, item);
+  return m->htbl[h];
+}
 
-/* 1------------------1 */
-
-/* delete an existing entry. NULL == notfound      */
-/* Disposal of the storage returned by hshdelete   */
-/* (originally created by hshdupfn) is up to the   */
-/* application. It is no longer managed by hashlib */
-/* It will usually be disposable by hshfreefn().   */
-void * hshdelete(hashmap *master, void *item)
+void *hashmap_remove(hashmap *m, void *item)
 {
   unsigned long h;
-  void         *olditem;
+  void *olditem;
 
-  h = huntup(master, item);
-  if ((olditem = master->htbl[h])) {
-    master->htbl[h] = DELETED;
-    master->hstatus.hdeleted++;
+  h = huntup(m, item);
+  olditem = m->htbl[h];
+
+  if(olditem != NULL) {
+    /* todo: why arent we setting this to NULL? */
+    m->htbl[h] = (void*)m;
+    m->hstatus.hdeleted++;
   }
+  
   return olditem;
-} /* hshdelete */
+}
 
-/* 1------------------1 */
-
-/* apply exec() to all entries in table. 0 = success */
-/* The order of application is arbitrary.  If exec() */
-/* returns non-zero (error) the walk stops           */
-int hshwalk(hashmap *master, hshexecfn exec, void *datum)
+int hashmap_foreach(hashmap *m, hshexecfn exec, void *datum)
 {
+  int err;
   unsigned long i;
-  int           err;
-  void         *xtra;
-  void         *hh;
-
-  if (NULL == exec) return -1;
-
-  if (master->hdebug) xtra = &i;
-  else                xtra = NULL;
-
-  for (i = 0; i < master->currentsz; i++) {
-    hh = master->htbl[i];
-    if ((hh) && (hh != DELETED))
-      if ((err = exec(hh, datum, xtra)))
-	return err;
+  void *hh;
+  
+  if (exec == NULL) {
+    return -1; 
   }
+
+  for (i = 0; i < m->currentsz; i++) {
+    hh = m->htbl[i];
+    if((hh != NULL) &&
+       (hh != (void*)m)) {
+      err = exec(hh, datum);
+      if(err != 0) {
+	return err;
+      }
+    }
+  }
+
   return 0;
-} /* hshwalk */
+}
 
-/* 1------------------1 */
-
-/* return various status values */
-hshstats hshstatus(hashmap *master)
+hshstats hashmap_stats(hashmap *m)
 {
-  return master->hstatus;
+  return m->hstatus;
 }
 
 /* ============= Useful generic functions ============= */

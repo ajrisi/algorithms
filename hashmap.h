@@ -79,7 +79,7 @@ typedef void (*hshfreefn)(void *item);
 /* complete stored database. It returns 0 for success.              */
 /* xtra will normally be NULL, but may be used for debug purposes   */
 /* During a database walk, the item parameter will never be NULL    */
-typedef int (*hshexecfn)(void *item, void *datum, void *xtra);
+typedef int (*hshexecfn)(void *item, void *datum);
 
 /* ------------ END of auxiliary function types ------------- */
 
@@ -114,39 +114,70 @@ struct hashmap_s {
   hshcmpfn cmp;
   hshdupfn dupe;
   hshfreefn undupe;
-  int hdebug;
   hshstats hstatus;
 };
 
-/* initialize and return a pointer to the data base */
+/** 
+ * Creates a new hashmap in memory, returns a pointer to it, or NULL
+ * on failure
+ * 
+ * @param hash the hashing function (faster)
+ * @param rehash a re-hashing function (slower)
+ * @param cmp a comparator function
+ * @param dupe a duplication function
+ * @param undupe a freeing function
+ * @param hdebug TODO: remove this
+ * 
+ * @return pointer to the hashmap in memory, or NULL on failure
+ */
 hashmap *hashmap_new(hshfn hash, hshfn rehash,
 		     hshcmpfn cmp,
-		     hshdupfn dupe, hshfreefn undupe,
-		     int hdebug);
+		     hshdupfn dupe, hshfreefn undupe);
 
-/* 1------------------1 */
 
-/* destroy the data base. Accepts NULL and does nothing */
+/** 
+ * Frees the memory associated with a hashmap. Will accept NULL
+ * gracefully
+ * 
+ * @param m the hashmap
+ */
 void hashmap_free(hashmap *m);
 
-/* 1------------------1 */
+/** 
+ * Locates an item in the hashmap, and returns a pointer to it.
+ * 
+ * @param m the hashmap
+ * @param item the item you are looking for (as can be compared
+ *              against in the comparator)
+ * 
+ * @return a pointer to the item in the table, or NULL on failure/not
+ *         found
+ */
+void *hashmap_find(hashmap *m, void *item);
 
-/* find an existing entry. NULL == notfound */
-void * hshfind(hashmap *master, void *item);
+/** 
+ * Removes an entry from the hashmap. Returns pointer to the data that
+ * was stored in the hash map. By removing from the hash map, you are
+ * responsible for freeing the returned memory (created by your
+ * dupfn). Normally, you can pass this pointer to your freefn.
+ * 
+ * @param m the hashmap
+ * @param item the item to remove
+ * 
+ * @return the address of the item in memory, or NULL on failure/not
+ *         found
+ */
+void *hashmap_remove(hashmap *m, void *item);
 
-/* 1------------------1 */
-
-/* delete an existing entry. NULL == notfound      */
-/* Disposal of the storage returned by hshdelete   */
-/* (originally created by hshdupfn) is up to the   */
-/* application. It is no longer managed by hashlib */
-/* It will usually be disposable by hshfreefn().   */
-void *hshdelete(hashmap *master, void *item);
-
-/* 1------------------1 */
-
-/* insert an entry.  NULL == failure, else item */
-void * hshinsert(hashmap *master, void *item);
+/** 
+ * Insert an item into the hashmap.
+ * 
+ * @param m the hashmap
+ * @param item the item to insert
+ * 
+ * @return the address of the item in memory, or NULL on failure
+ */
+void *hashmap_insert(hashmap *m, void *item);
 
 /* 1------------------1 */
 
@@ -154,12 +185,27 @@ void * hshinsert(hashmap *master, void *item);
 /* The order of application is arbitrary.  If exec */
 /* returns non-zero (error) the walk stops         */
 /* datum can provide a global data area for exec   */
-int hshwalk(hashmap *master, hshexecfn exec, void *datum);
+/** 
+ * Executes exec for each item in the hashmap (no guaranteed order)
+ * 
+ * @param m the hashmap
+ * @param exec an exec fn - return 0 for all successes, and something
+ *             else on a failure
+ * @param datum data that the exec function will have access to.
+ * 
+ * @return 0 on success, other on failure
+ */
+int hashmap_foreach(hashmap *m, hshexecfn exec, void *datum);
 
-/* 1------------------1 */
 
-/* return various statistics on use of this hshtbl */
-hshstats hshstatus(hashmap *master);
+/** 
+ * Return statistics for this hashmap
+ * 
+ * @param m the hashmap
+ * 
+ * @return statistics for the hashmap
+ */
+hshstats hashmap_stats(hashmap *m);
 
 /* ============= Useful generic functions ============= */
 

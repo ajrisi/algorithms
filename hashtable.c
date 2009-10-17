@@ -1,5 +1,5 @@
 /**
- * @file   hashmap.c
+ * @file   hashtable.c
  * @author Adam Risi <ajrisi@gmail.com>
  * @date   Fri Oct 16 11:59:23 2009
  * 
@@ -76,14 +76,9 @@
    Make some better usage examples than the test suite & markov.
 */
 
-#include "hashmap.h"
+#include "hashtable.h"
 
-/* WARN   WARN   WARN   WARN  WARN */
-/* Peculiar definition, never to escape this module and NEVER */
-/* NEVER to be dereferenced.   This is the equivalent of NULL */
-/* NEVER EVER change the name of 'master' anywhere.           */
-
-/* they are using the address of the hashmap as an indicator of a deleted entry */
+/* they are using the address of the hashtable as an indicator of a deleted entry */
 #define DELETED (void*)master
 
 /* Threshold above which reorganization is desirable */
@@ -112,11 +107,11 @@ static int primetbl[] = {45, 45, 41, 45, 45, 45, 45, 49,
 /* because of fragmentation. Changing the ratio won't help. */
 /* changed */
 /* initialize and return a pointer to the data base */
-hashmap *hashmap_new(hshfn hash, hshfn rehash,
+hashtable *hashtable_new(hshfn hash, hshfn rehash,
 		     hshcmpfn cmp,
 		     hshdupfn dupe, hshfreefn undupe)
 {
-  hashmap *master;
+  hashtable *master;
   
   if((hash == NULL) ||
      (rehash == NULL) ||
@@ -131,13 +126,13 @@ hashmap *hashmap_new(hshfn hash, hshfn rehash,
     return NULL;
   }
   
-  master->htbl = maketbl(HASHMAP_STARTSIZE);
+  master->htbl = maketbl(HASHTABLE_STARTSIZE);
   if(master->htbl == NULL) {
     free(master);
     return NULL;
   }
 
-  master->currentsz = HASHMAP_STARTSIZE;
+  master->currentsz = HASHTABLE_STARTSIZE;
   master->hash = hash;
   master->rehash = rehash;
   master->cmp = cmp;
@@ -154,7 +149,7 @@ hashmap *hashmap_new(hshfn hash, hshfn rehash,
 }
 
 
-void hashmap_free(hashmap *m)
+void hashtable_free(hashtable *m)
 {
   unsigned long i;
   void *h;
@@ -178,7 +173,7 @@ void hashmap_free(hashmap *m)
 }
 
 
-void *hashmap_insert(hashmap *m, void *item)
+void *hashtable_insert(hashtable *m, void *item)
 {
   if ((TSPACE(m) <= 0) && !reorganize(m)) {
     m->hstatus.herror |= hshTBLFULL;
@@ -189,7 +184,7 @@ void *hashmap_insert(hashmap *m, void *item)
 }
 
 
-void *hashmap_find(hashmap *m, void *item)
+void *hashtable_find(hashtable *m, void *item)
 {
   unsigned long h;
 
@@ -198,7 +193,7 @@ void *hashmap_find(hashmap *m, void *item)
 }
 
 
-void *hashmap_remove(hashmap *m, void *item)
+void *hashtable_remove(hashtable *m, void *item)
 {
   unsigned long h;
   void *olditem;
@@ -216,7 +211,7 @@ void *hashmap_remove(hashmap *m, void *item)
 }
 
 
-int hashmap_foreach(hashmap *m, hshexecfn exec, void *datum)
+int hashtable_foreach(hashtable *m, hshexecfn exec, void *datum)
 {
   int err;
   unsigned long i;
@@ -241,7 +236,7 @@ int hashmap_foreach(hashmap *m, hshexecfn exec, void *datum)
 }
 
 
-hshstats hashmap_stats(hashmap *m)
+hshstats hashtable_stats(hashtable *m)
 {
   return m->hstatus;
 }
@@ -310,7 +305,7 @@ static unsigned long ithprime(size_t i)
 /* Attempt to insert item at the hth position in the table */
 /* Returns NULL if position already taken or if dupe fails */
 /* (when master->herror is set to hshNOMEM)                */
-static void *inserted(hashmap *master, unsigned long h,
+static void *inserted(hashtable *master, unsigned long h,
                        void *item,
                        int copying)  /* during reorganization */
 {
@@ -335,7 +330,7 @@ static void *inserted(hashmap *master, unsigned long h,
   return master->htbl[h];
 } /* inserted */
 
-static void *putintbl(hashmap *master, void *item, int copying)
+static void *putintbl(hashtable *master, void *item, int copying)
 {
   unsigned long h, h2;
   void         *stored;
@@ -357,7 +352,7 @@ static void *putintbl(hashmap *master, void *item, int copying)
 /* reinsert all entries from the old table in the new. */
 /* revise the currentsz value to match                 */
 /* free the storage for the old table.                 */
-static int reorganize(hashmap *master)
+static int reorganize(hashtable *master)
 {
   void*         *newtbl;
   void*         *oldtbl;
@@ -413,7 +408,7 @@ static int reorganize(hashmap *master)
 
 /* Attempt to find item at the hth position in the table */
 /* counting attempts.  Returns 1 if found, else 0        */
-static int found(hashmap *master, unsigned long h, void *item)
+static int found(hashtable *master, unsigned long h, void *item)
 {
   void *hh;
 
@@ -425,7 +420,7 @@ static int found(hashmap *master, unsigned long h, void *item)
 } /* found */
 
 /* Find the current hashtbl index for item, or an empty slot */
-static unsigned long huntup(hashmap *master, void *item)
+static unsigned long huntup(hashtable *master, void *item)
 {
   unsigned long h, h2;
 

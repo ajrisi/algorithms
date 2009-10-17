@@ -1,7 +1,7 @@
 TARGET=libalgo.a
 
-all: heap.o prng.o graph.o dqueue.o hashmap.o
-	ar rcs $(TARGET) heap.o prng.o graph.o dqueue.o hashmap.o
+all: heap.o prng.o graph.o dqueue.o hashtable.o
+	ar rcs $(TARGET) heap.o prng.o graph.o dqueue.o hashtable.o
 
 heap.o:	heap.c heap.h
 	gcc -ansi -Wall -o heap.o -c heap.c
@@ -15,8 +15,8 @@ prng.o:	prng.c prng.h
 graph.o: graph.c graph.h
 	gcc -ansi -Wall -o graph.o -c graph.c
 
-hashmap.o: hashmap.h hashmap.c
-	gcc -ansi -Wall -o hashmap.o -c hashmap.c
+hashtable.o: hashtable.h hashtable.c
+	gcc -ansi -Wall -o hashtable.o -c hashtable.c
 
 clean:	
 	rm -f $(TARGET) 2> /dev/null

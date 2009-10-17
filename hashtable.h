@@ -1,5 +1,5 @@
 /**
- * @file   hashmap.h
+ * @file   hashtable.h
  * @author Adam Risi <ajrisi@gmail.com>
  * @date   Fri Oct 16 12:16:23 2009
  * 
@@ -11,13 +11,13 @@
 
 
 
-#ifndef _HASHMAP_H_
-#define _HASHMAP_H_
+#ifndef _HASHTABLE_H_
+#define _HASHTABLE_H_
 
 #include <stdlib.h>
 
 /* this was "a prime, for easy testing" */
-#define HASHMAP_STARTSIZE 17
+#define HASHTABLE_STARTSIZE 17
 
 /* This is an example of object oriented programming in C, in   */
 /* that it isolates the hashtable functioning from the objects  */
@@ -105,8 +105,8 @@ struct hshstats_s {
 /* This is the entity that remembers all about the database  */
 /* It occurs in the users data space, keeping the system     */
 /* reentrant, because it is passed to all entry routines.    */
-typedef struct hashmap_s hashmap;
-struct hashmap_s {
+typedef struct hashtable_s hashtable;
+struct hashtable_s {
   void **htbl;      /* points to an array of void* */
   unsigned long currentsz;          /* size of that array */
   hshfn hash;
@@ -123,14 +123,14 @@ struct hashmap_s {
  */
 static void **maketbl(unsigned long newsize);
 static unsigned long ithprime(size_t i);
-static void *inserted(hashmap *master, unsigned long h, void *item, int copying);
-static void *putintbl(hashmap *master, void *item, int copying);
-static int reorganize(hashmap *master);
-static int found(hashmap *master, unsigned long h, void *item);
-static unsigned long huntup(hashmap *master, void *item);
+static void *inserted(hashtable *master, unsigned long h, void *item, int copying);
+static void *putintbl(hashtable *master, void *item, int copying);
+static int reorganize(hashtable *master);
+static int found(hashtable *master, unsigned long h, void *item);
+static unsigned long huntup(hashtable *master, void *item);
 
 /** 
- * Creates a new hashmap in memory, returns a pointer to it, or NULL
+ * Creates a new hashtable in memory, returns a pointer to it, or NULL
  * on failure
  * 
  * @param hash the hashing function (faster)
@@ -140,56 +140,56 @@ static unsigned long huntup(hashmap *master, void *item);
  * @param undupe a freeing function
  * @param hdebug TODO: remove this
  * 
- * @return pointer to the hashmap in memory, or NULL on failure
+ * @return pointer to the hashtable in memory, or NULL on failure
  */
-hashmap *hashmap_new(hshfn hash, hshfn rehash,
+hashtable *hashtable_new(hshfn hash, hshfn rehash,
 		     hshcmpfn cmp,
 		     hshdupfn dupe, hshfreefn undupe);
 
 
 /** 
- * Frees the memory associated with a hashmap. Will accept NULL
+ * Frees the memory associated with a hashtable. Will accept NULL
  * gracefully
  * 
- * @param m the hashmap
+ * @param m the hashtable
  */
-void hashmap_free(hashmap *m);
+void hashtable_free(hashtable *m);
 
 /** 
- * Locates an item in the hashmap, and returns a pointer to it.
+ * Locates an item in the hashtable, and returns a pointer to it.
  * 
- * @param m the hashmap
+ * @param m the hashtable
  * @param item the item you are looking for (as can be compared
  *              against in the comparator)
  * 
  * @return a pointer to the item in the table, or NULL on failure/not
  *         found
  */
-void *hashmap_find(hashmap *m, void *item);
+void *hashtable_find(hashtable *m, void *item);
 
 /** 
- * Removes an entry from the hashmap. Returns pointer to the data that
+ * Removes an entry from the hashtable. Returns pointer to the data that
  * was stored in the hash map. By removing from the hash map, you are
  * responsible for freeing the returned memory (created by your
  * dupfn). Normally, you can pass this pointer to your freefn.
  * 
- * @param m the hashmap
+ * @param m the hashtable
  * @param item the item to remove
  * 
  * @return the address of the item in memory, or NULL on failure/not
  *         found
  */
-void *hashmap_remove(hashmap *m, void *item);
+void *hashtable_remove(hashtable *m, void *item);
 
 /** 
- * Insert an item into the hashmap.
+ * Insert an item into the hashtable.
  * 
- * @param m the hashmap
+ * @param m the hashtable
  * @param item the item to insert
  * 
  * @return the address of the item in memory, or NULL on failure
  */
-void *hashmap_insert(hashmap *m, void *item);
+void *hashtable_insert(hashtable *m, void *item);
 
 /* 1------------------1 */
 
@@ -198,26 +198,26 @@ void *hashmap_insert(hashmap *m, void *item);
 /* returns non-zero (error) the walk stops         */
 /* datum can provide a global data area for exec   */
 /** 
- * Executes exec for each item in the hashmap (no guaranteed order)
+ * Executes exec for each item in the hashtable (no guaranteed order)
  * 
- * @param m the hashmap
+ * @param m the hashtable
  * @param exec an exec fn - return 0 for all successes, and something
  *             else on a failure
  * @param datum data that the exec function will have access to.
  * 
  * @return 0 on success, other on failure
  */
-int hashmap_foreach(hashmap *m, hshexecfn exec, void *datum);
+int hashtable_foreach(hashtable *m, hshexecfn exec, void *datum);
 
 
 /** 
- * Return statistics for this hashmap
+ * Return statistics for this hashtable
  * 
- * @param m the hashmap
+ * @param m the hashtable
  * 
- * @return statistics for the hashmap
+ * @return statistics for the hashtable
  */
-hshstats hashmap_stats(hashmap *m);
+hshstats hashtable_stats(hashtable *m);
 
 /* ============= Useful generic functions ============= */
 
@@ -240,5 +240,5 @@ unsigned long hshstrhash(const char * string);
  */
 unsigned long hshstrehash(const char * string);
 
-#endif /* _HASHMAP_H_ */
+#endif /* _HASHTABLE_H_ */
 

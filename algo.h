@@ -20,6 +20,4 @@
 #include "hashtable.h"
 #include "hash.h"
 
-typedef void*(dupfn)(void*);
-
 #endif

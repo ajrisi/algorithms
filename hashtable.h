@@ -136,8 +136,8 @@ struct hashtable_s {
  * @return pointer to the hashtable in memory, or NULL on failure
  */
 hashtable *hashtable_new(hshfn hash, hshfn rehash,
-			 hshcmpfn cmp,
-			 hshdupfn dupe, hshfreefn undupe);
+		     hshcmpfn cmp,
+		     hshdupfn dupe, hshfreefn undupe);
 
 
 /** 

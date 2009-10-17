@@ -13,12 +13,11 @@
 #ifndef ALGO_H_
 #define ALGO_H_
 
-typedef void*(*dupfn)(void*);
-
 #include "graph.h"
 #include "heap.h"
 #include "prng.h"
 #include "dqueue.h"
 #include "hashtable.h"
+#include "hash.h"
 
 #endif

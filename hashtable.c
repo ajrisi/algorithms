@@ -106,9 +106,7 @@ hashtable *hashtable_new(hshfn hash, hshfn rehash,
   
   if((hash == NULL) ||
      (rehash == NULL) ||
-     (cmp == NULL) ||
-     (dupe == NULL) ||
-     (undupe == NULL)) {
+     (cmp == NULL)) {
     return NULL;
   }
   
@@ -153,7 +151,9 @@ void hashtable_free(hashtable *m)
   for (i = 0; i < m->currentsz; i++) {
     /* TODO: check to make sure that we have an undup? */
     if ((h = m->htbl[i]) && ((void*)m != h)) {
-      m->undupe(m->htbl[i]);
+      if(m->undupe != NULL) {
+	m->undupe(m->htbl[i]);
+      }
     }
   }
   
@@ -311,7 +311,7 @@ static void *inserted(hashtable *master,
     /* slot is empty */
     if(copying) {  
       master->htbl[h] = item;
-    } else if ((master->htbl[h] = master->dupe(item))) {
+    } else if ((master->htbl[h] = (master->dupe == NULL) ? item : master->dupe(item))) {
       /* new entry, so dupe and insert */
       master->hstatus.hentries++;          /* count 'em */
     } else {

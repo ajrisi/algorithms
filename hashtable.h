@@ -129,6 +129,11 @@ static int reorganize(hashtable *master);
 static int found(hashtable *master, unsigned long h, void *item);
 static unsigned long huntup(hashtable *master, void *item);
 
+/**
+ * Public API
+ * 
+ */
+
 /** 
  * Creates a new hashtable in memory, returns a pointer to it, or NULL
  * on failure

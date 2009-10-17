@@ -98,15 +98,6 @@ static int primetbl[] = {45, 45, 41, 45, 45, 45, 45, 49,
                          57, 49, 41, 45, 59, 55, 57, 61,
                          63, 61, 45, 79, 0};
 
-/* 1------------------1 */
-
-/* Create, allocate and initialize an empty hash table      */
-/* This is always doubling the table size, and the size of  */
-/* all the old tables together won't hold it.  So any       */
-/* freed old table space is effectively useless for this    */
-/* because of fragmentation. Changing the ratio won't help. */
-/* changed */
-/* initialize and return a pointer to the data base */
 hashtable *hashtable_new(hshfn hash, hshfn rehash,
 		     hshcmpfn cmp,
 		     hshdupfn dupe, hshfreefn undupe)
@@ -235,7 +226,6 @@ int hashtable_foreach(hashtable *m, hshexecfn exec, void *datum)
   return 0;
 }
 
-
 hshstats hashtable_stats(hashtable *m)
 {
   return m->hstatus;
@@ -290,42 +280,52 @@ static void **maketbl(unsigned long newsize)
 /* is    ( 2**(FIRSTN + i) ) - primetbl[i]                  */
 /* The above table suffices for about 48,000,000 entries.   */
 
-/* 1------------------1 */
-
 /* return a prime slightly less than 2**(FIRSTN + i) -1 */
 /* return 0 for i value out of range                    */
 static unsigned long ithprime(size_t i)
 {
-  if ((i < sizeof primetbl / sizeof (int)) && (primetbl[i]))
+  if ((i < sizeof primetbl / sizeof (int)) && (primetbl[i])) {
     return ((1 << (FIRSTN + i)) - primetbl[i]);
-  else return 0;
-} /* ithprime */
+  } else {
+    return 0;
+  }
+}
 
 
 /* Attempt to insert item at the hth position in the table */
 /* Returns NULL if position already taken or if dupe fails */
 /* (when master->herror is set to hshNOMEM)                */
-static void *inserted(hashtable *master, unsigned long h,
-                       void *item,
-                       int copying)  /* during reorganization */
+static void *inserted(hashtable *master, 
+		      unsigned long h,
+		      void *item,
+		      int copying)  /* during reorganization */
 {
-  void  * hh;
-  
-  master->hstatus.probes++;         /* count total probes */
+  void  *hh;
+
+  /* increment probe counter */
+  master->hstatus.probes++;
+
   hh = master->htbl[h];
-  if (NULL == hh) {                  /* we have found a slot */
-    if (copying) master->htbl[h] = item;
-    else if ((master->htbl[h] = master->dupe(item)))
+
+  if (hh == NULL) {
+    /* slot is empty */
+    if(copying) {  
+      master->htbl[h] = item;
+    } else if ((master->htbl[h] = master->dupe(item))) {
       /* new entry, so dupe and insert */
       master->hstatus.hentries++;          /* count 'em */
-    else master->hstatus.herror |= hshNOMEM;
-  }
-  else if (copying) return NULL; /* no compare if copying */
-  else if (DELETED == hh) return NULL;  /* nor if DELETED */
-  else if (0 != master->cmp(master->htbl[h], item)) {
+    } else {
+      master->hstatus.herror |= hshNOMEM;
+    }
+  } else if (copying) {
+    return NULL; /* no compare if copying */
+  } else if (DELETED == hh) {
+    return NULL;  /* nor if DELETED */
+  } else if (0 != master->cmp(master->htbl[h], item)) {
     /* not found here */
     return NULL;
   }
+
   /* else found already inserted here */
   return master->htbl[h];
 } /* inserted */
@@ -354,57 +354,75 @@ static void *putintbl(hashtable *master, void *item, int copying)
 /* free the storage for the old table.                 */
 static int reorganize(hashtable *master)
 {
-  void*         *newtbl;
-  void*         *oldtbl;
-  unsigned long  newsize, oldsize;
-  unsigned long  oldentries, j;
-  unsigned int   i;
+  void **newtbl;
+  void **oldtbl;
+  unsigned long newsize, oldsize;
+  unsigned long oldentries, j;
+  unsigned int i;
 
   oldsize = master->currentsz;
   oldtbl =  master->htbl;
   oldentries = 0;
 
   if (master->hstatus.hdeleted > (master->hstatus.hentries / 4))
-    /* don't expand table if we can get reasonable space  */
-    /* by simply removing the accumulated DELETED entries */
+    /* don't expand table if we can get reasonable space by simply
+       removing the accumulated DELETED entries - reasonable space
+       being that more than 1/4 of the total entries have been
+       deleted */
     newsize = oldsize;
   else {
     /* all ithprime usage is here */
     newsize = ithprime(0);
-    for (i = 1; newsize && (newsize <= oldsize); i++)
+    for (i = 1; newsize && (newsize <= oldsize); i++) {
       newsize = ithprime(i);
-  }
-  if (newsize) newtbl = maketbl(newsize);
-  else         newtbl = NULL;
-
-  if (newtbl) {
-    master->currentsz = newsize;
-    master->htbl = newtbl;
-
-    /* Now reinsert all old entries in new table */
-    for (j = 0; j < oldsize; j++)
-      if (oldtbl[j] && (oldtbl[j] != DELETED)) {
-	(void) putintbl(master, oldtbl[j], 1);
-	oldentries++;
-      }
-    /* Sanity check */
-    if (oldentries != master->hstatus.hentries
-	- master->hstatus.hdeleted) {
-      master->hstatus.herror |= hshINTERR;
-      free(master->htbl);
-      master->htbl = oldtbl;
-      master->currentsz = oldsize;
-      return 0;      /* failure */
-    }
-    else {
-      master->hstatus.hentries = oldentries;
-      master->hstatus.hdeleted = 0;
-      free(oldtbl);
-      return 1;      /* success */
     }
   }
-  return 0;            /* failure */
-} /* reorganize */
+
+  if (newsize != 0) {
+    newtbl = maketbl(newsize);
+  } else {
+    /* this is an error being returned - even though its not -really-
+       a bad thing */
+    return 0;
+  }
+
+  master->currentsz = newsize;
+  master->htbl = newtbl;
+  
+  /* Now reinsert all old entries in new table */
+  for (j = 0; j < oldsize; j++) {
+    if ((oldtbl[j] != NULL) &&
+	(oldtbl[j] != DELETED)) {
+      (void) putintbl(master, oldtbl[j], 1);
+      oldentries++;
+    }
+  }
+
+  /* Sanity check */
+  if (oldentries != 
+      (master->hstatus.hentries - master->hstatus.hdeleted)) {
+    /* set the hashtable status to an error */
+    master->hstatus.herror |= hshINTERR;
+
+    /* free the new table */
+    free(master->htbl);
+
+    /* restore the old table */
+    master->htbl = oldtbl;
+    master->currentsz = oldsize;
+    return 0;
+  } else {
+   
+    /* set the new statistics */
+    master->hstatus.hentries = oldentries;
+    master->hstatus.hdeleted = 0;
+
+    /* free the old table */
+    free(oldtbl);
+  }
+
+  return 1;
+}
 
 /* Attempt to find item at the hth position in the table */
 /* counting attempts.  Returns 1 if found, else 0        */
@@ -412,18 +430,26 @@ static int found(hashtable *master, unsigned long h, void *item)
 {
   void *hh;
 
-  master->hstatus.probes++;            /* count total probes */
+  /* increment total probecounter */
+  master->hstatus.probes++;
+  
   hh = master->htbl[h];
-  if ((hh) && (hh != DELETED))  /* NEVER cmp against DELETED */
-    return !(master->cmp(hh, item));
-  else return 0;
-} /* found */
+  
+  if((hh == NULL) ||
+     (hh == (void*)master)) {
+    return 0;
+  }
+  
+  return !(master->cmp(hh, item));
+}
 
 /* Find the current hashtbl index for item, or an empty slot */
 static unsigned long huntup(hashtable *master, void *item)
 {
-  unsigned long h, h2;
+  unsigned long h;
+  unsigned long h2;
 
+  /* limit h to the size of the table */
   h = master->hash(item) % master->currentsz;
 
   /* Within this a DELETED item simply causes a rehash */
@@ -436,6 +462,7 @@ static unsigned long huntup(hashtable *master, void *item)
       h = (h + h2) % master->currentsz;
     } while (!(found(master, h, item)) && (master->htbl[h]));
   }
+
   return h;
-} /* huntup */
+}
 

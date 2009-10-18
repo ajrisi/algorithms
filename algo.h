@@ -20,6 +20,7 @@
 #include "hashtable.h"
 #include "hash.h"
 #include "trie.h"
+#include "dictionary.h"
 
 #endif
 

@@ -1,5 +1,7 @@
 TARGET=libalgo.a
 
+INST_HEADERS= algo.h heap.h dqueue.h prng.h graph.h hashtable.h hash.h trie.h
+
 all: algo.h heap.o prng.o graph.o dqueue.o hashtable.o hash.o trie.o
 	ar rcs $(TARGET) heap.o prng.o graph.o dqueue.o hashtable.o hash.o trie.o
 
@@ -23,6 +25,15 @@ hash.o: hash.h hash.c
 
 trie.o: trie.h trie.c
 	gcc -ansi -Wall -o trie.o -c trie.c
+
+install:
+	install -m 644 libalgo.a /usr/lib/
+	mkdir /usr/include/algo
+	install -m 644 $(INST_HEADERS) /usr/include/algo
+
+uninstall:
+	rm /usr/lib/libalgo.a
+	cd /usr/include/algo && rm $(INST_HEADERS)
 
 clean:	
 	rm -f $(TARGET) 2> /dev/null

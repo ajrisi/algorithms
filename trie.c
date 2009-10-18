@@ -271,4 +271,3 @@ static int foreach_in(trie_node *n, unsigned int depth, char *s, int(*fn)(char *
   return ret;
 }
 
-

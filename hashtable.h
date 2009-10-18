@@ -108,7 +108,7 @@ struct hshstats_s {
 typedef struct hashtable_s hashtable;
 struct hashtable_s {
   void **htbl;      /* points to an array of void* */
-  unsigned long currentsz;          /* size of that array */
+  unsigned long size;          /* size of that array */
   hshfn hash;
   hshfn rehash;
   hshcmpfn cmp;

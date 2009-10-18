@@ -16,7 +16,7 @@ static unsigned long huntup(hashtable *master, void *item);
 
 /* Space available before reaching threshold */
 /* Ensure this can return a negative value   */
-#define TSPACE(m)  ((long)TTHRESH(m->currentsz)		\
+#define TSPACE(m)  ((long)TTHRESH(m->size)		\
 		    - (long)m->hstatus.hentries)
 
 /* table of k where 2**n - k is prime, for n=8 up. 0 ends   */
@@ -51,7 +51,7 @@ hashtable *hashtable_new(hshfn hash, hshfn rehash,
     return NULL;
   }
 
-  master->currentsz = HASHTABLE_STARTSIZE;
+  master->size = HASHTABLE_STARTSIZE;
   master->hash = hash;
   master->rehash = rehash;
   master->cmp = cmp;
@@ -77,7 +77,7 @@ void hashtable_free(hashtable *m)
   }
   
   /* unload the actual data storage */
-  for (i = 0; i < m->currentsz; i++) {
+  for (i = 0; i < m->size; i++) {
     if ((h = m->htbl[i]) && ((void*)m != h)) {
       if(m->undupe != NULL) {
 	m->undupe(m->htbl[i]);
@@ -153,7 +153,7 @@ int hashtable_foreach(hashtable *m, hshexecfn exec, void *datum)
     return -1; 
   }
 
-  for (i = 0; i < m->currentsz; i++) {
+  for (i = 0; i < m->size; i++) {
     hh = m->htbl[i];
     if((hh != NULL) &&
        (hh != (void*)m)) {
@@ -273,17 +273,17 @@ static void *putintbl(hashtable *master, void *item, int copying)
   unsigned long h2;
   void *stored;
 
-  h = master->hash(item) % master->currentsz;
+  h = master->hash(item) % master->size;
   stored = inserted(master, h, item, copying);
 
   if ((stored == NULL) && 
       (master->hstatus.herror == hshOK)) {
     /* if the item was not already in the table, and we do not have
        any errors */
-    h2 = master->rehash(item) % (master->currentsz >> 3) + 1;
+    h2 = master->rehash(item) % (master->size >> 3) + 1;
     do {       /* we had to go past 1 per item */
       master->hstatus.misses++;
-      h = (h + h2) % master->currentsz;
+      h = (h + h2) % master->size;
 
       stored = inserted(master, h, item, copying);
     } while ((stored == NULL) &&
@@ -294,7 +294,7 @@ static void *putintbl(hashtable *master, void *item, int copying)
 
 /* Increase the table size by roughly a factor of 2    */
 /* reinsert all entries from the old table in the new. */
-/* revise the currentsz value to match                 */
+/* revise the size value to match                 */
 /* free the storage for the old table.                 */
 static int reorganize(hashtable *master)
 {
@@ -304,7 +304,7 @@ static int reorganize(hashtable *master)
   unsigned long oldentries, j;
   unsigned int i;
 
-  oldsize = master->currentsz;
+  oldsize = master->size;
   oldtbl =  master->htbl;
   oldentries = 0;
 
@@ -330,7 +330,7 @@ static int reorganize(hashtable *master)
     return 0;
   }
 
-  master->currentsz = newsize;
+  master->size = newsize;
   master->htbl = newtbl;
   
   /* Now reinsert all old entries in new table */
@@ -353,7 +353,7 @@ static int reorganize(hashtable *master)
 
     /* restore the old table */
     master->htbl = oldtbl;
-    master->currentsz = oldsize;
+    master->size = oldsize;
     return 0;
   } else {
    
@@ -394,16 +394,16 @@ static unsigned long huntup(hashtable *master, void *item)
   unsigned long h2;
 
   /* limit h to the size of the table */
-  h = master->hash(item) % master->currentsz;
+  h = master->hash(item) % master->size;
 
   /* Within this a DELETED item simply causes a rehash */
   /* i.e. treat it like a non-equal item               */
 
   if (!(found(master, h, item)) && master->htbl[h]) {
-    h2 = master->rehash(item) % (master->currentsz >> 3) + 1;
+    h2 = master->rehash(item) % (master->size >> 3) + 1;
     do {       /* we had to go past 1 per item */
       master->hstatus.misses++;
-      h = (h + h2) % master->currentsz;
+      h = (h + h2) % master->size;
     } while (!(found(master, h, item)) && (master->htbl[h]));
   }
 

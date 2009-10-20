@@ -1,9 +1,9 @@
 TARGET=libalgo.a
 
-INST_HEADERS= algo.h heap.h dqueue.h prng.h graph.h hashtable.h hash.h trie.h dictionary.h
+INST_HEADERS= algo.h heap.h dqueue.h prng.h graph.h hashtable.h hash.h trie.h dictionary.h cmp.h
 
-all: algo.h heap.o prng.o graph.o dqueue.o hashtable.o hash.o trie.o dictionary.o
-	ar rcs $(TARGET) heap.o prng.o graph.o dqueue.o hashtable.o hash.o trie.o dictionary.o
+all: algo.h heap.o prng.o graph.o dqueue.o hashtable.o hash.o trie.o dictionary.o cmp.o
+	ar rcs $(TARGET) heap.o prng.o graph.o dqueue.o hashtable.o hash.o trie.o dictionary.o cmp.o
 
 heap.o:	heap.c heap.h
 	gcc -ansi -Wall -o heap.o -c heap.c
@@ -28,6 +28,9 @@ trie.o: trie.h trie.c
 
 dictionary.o: dictionary.h dictionary.c
 	gcc -ansi -Wall -o dictionary.o -c dictionary.c
+
+cmp.o: cmp.h cmp.c
+	gcc -ansi -Wall -o cmp.o -c cmp.c
 
 install:
 	install -m 644 libalgo.a /usr/lib/

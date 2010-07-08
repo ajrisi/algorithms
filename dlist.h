@@ -1,8 +1,8 @@
 /**
  * @file   dlist.h
- * @author Adam Risi <adam@chronos>
+ * @author Adam Risi <ajrisi@gmail.com>
  * @date   Wed Mar 17 13:12:55 2010
- * 
+x * 
  * @brief A doubly linked list implementation - part of my algorithms
  * collection
  * 

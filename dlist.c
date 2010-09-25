@@ -1,5 +1,18 @@
-#include "dlist.h"
+/**
+ * @file   dlist.c
+ * @author Adam Risi <ajrisi@gmail.com>
+ * @date   Fri Sep 24 22:18:02 2010
+ * 
+ * @brief This is a doubly linked list implementation that is part of
+ *        my algorithms collection.
+ * 
+ * 
+ */
+
+
 #include <stdlib.h>
+
+#include "dlist.h"
 
 dlist *dlist_new(dupfn fndup, freefn fnfree)
 {
